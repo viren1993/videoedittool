@@ -1,5 +1,3 @@
-import axios from "axios";
-
 export type UploadProgressCallback = (
   uploadId: string,
   progress: number
@@ -22,49 +20,33 @@ export async function processFileUpload(
   callbacks: UploadCallbacks
 ): Promise<any> {
   try {
-    // Get presigned URL
-    const {
-      data: { uploads }
-    } = await axios.post(
-      "/api/uploads/presign",
-      {
-        userId: "PJ1nkaufw0hZPyhN7bWCP",
-        fileNames: [file.name]
-      },
-      {
-        headers: { "Content-Type": "application/json" }
-      }
-    );
+    callbacks.onProgress(uploadId, 10);
 
-    const uploadInfo = uploads[0];
+    const objectUrl = URL.createObjectURL(file);
+    
+    callbacks.onProgress(uploadId, 50);
 
-    // Upload file with progress tracking
-    await axios.put(uploadInfo.presignedUrl, file, {
-      headers: { "Content-Type": uploadInfo.contentType },
-      onUploadProgress: (progressEvent) => {
-        const percent = Math.round(
-          (progressEvent.loaded * 100) / (progressEvent.total || 1)
-        );
-        callbacks.onProgress(uploadId, percent);
-      },
-      validateStatus: () => true
-    });
+    const contentType = file.type || "application/octet-stream";
+    const fileType = contentType.split("/")[0];
 
-    // Construct upload data from uploadInfo
     const uploadData = {
-      fileName: uploadInfo.fileName,
-      filePath: uploadInfo.filePath,
+      id: uploadId,
+      fileName: file.name,
+      filePath: objectUrl,
       fileSize: file.size,
-      contentType: uploadInfo.contentType,
-      metadata: { uploadedUrl: uploadInfo.url },
-      folder: uploadInfo.folder || null,
-      type: uploadInfo.contentType.split("/")[0],
-      method: "direct",
+      contentType: contentType,
+      metadata: { uploadedUrl: objectUrl },
+      folder: null,
+      type: fileType,
+      method: "local",
       origin: "user",
       status: "uploaded",
-      isPreview: false
+      isPreview: false,
+      file: file,
+      url: objectUrl
     };
 
+    callbacks.onProgress(uploadId, 100);
     callbacks.onStatus(uploadId, "uploaded");
     return uploadData;
   } catch (error) {
@@ -79,43 +61,43 @@ export async function processUrlUpload(
   callbacks: UploadCallbacks
 ): Promise<any[]> {
   try {
-    // Start with 10% progress
     callbacks.onProgress(uploadId, 10);
 
-    // Upload URL
-    const { data: { uploads = [] } = {} } = await axios.post(
-      "/api/uploads/url",
-      {
-        userId: "PJ1nkaufw0hZPyhN7bWCP",
-        urls: [url]
-      },
-      {
-        headers: { "Content-Type": "application/json" }
-      }
-    );
+    let contentType = "application/octet-stream";
+    const urlLower = url.toLowerCase();
+    
+    if (urlLower.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i)) {
+      contentType = "video/mp4";
+    } else if (urlLower.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/i)) {
+      contentType = "image/jpeg";
+    } else if (urlLower.match(/\.(mp3|wav|ogg|aac|flac|m4a)(\?|$)/i)) {
+      contentType = "audio/mpeg";
+    }
 
-    // Update to 50% progress
+    const fileName = url.split("/").pop()?.split("?")[0] || "file";
+    const fileType = contentType.split("/")[0];
+
     callbacks.onProgress(uploadId, 50);
 
-    // Construct upload data from uploads array
-    const uploadDataArray = uploads.map((uploadInfo: any) => ({
-      fileName: uploadInfo.fileName,
-      filePath: uploadInfo.filePath,
+    const uploadData = {
+      id: uploadId,
+      fileName: fileName,
+      filePath: url,
       fileSize: 0,
-      contentType: uploadInfo.contentType,
-      metadata: { originalUrl: uploadInfo.originalUrl },
-      folder: uploadInfo.folder || null,
-      type: uploadInfo.contentType.split("/")[0],
+      contentType: contentType,
+      metadata: { uploadedUrl: url, originalUrl: url },
+      folder: null,
+      type: fileType,
       method: "url",
       origin: "user",
       status: "uploaded",
-      isPreview: false
-    }));
+      isPreview: false,
+      url: url
+    };
 
-    // Complete
     callbacks.onProgress(uploadId, 100);
     callbacks.onStatus(uploadId, "uploaded");
-    return uploadDataArray;
+    return [uploadData];
   } catch (error) {
     callbacks.onStatus(uploadId, "failed", (error as Error).message);
     throw error;
