@@ -1,3 +1,5 @@
-export const Signin = () => {
-  return <div>Signin</div>;
-};
+import Signin from "@/features/signin";
+
+export default function SigninPage() {
+  return <Signin />;
+}
