@@ -1,25 +1,30 @@
 "use client";
 
+import { Company } from "./type";
 import { useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { z } from "zod";
 import { useSession } from "next-auth/react";
-
-// Assuming these are your component imports
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Button,
+  Dialog,
+  Flex,
+  IconButton,
+  Text,
+  TextArea,
+} from "@radix-ui/themes";
+import { Eye, EyeClosed, Grid, SquarePen, UserPlus } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { DATA_API } from "@/config/constants";
-
-import axios from "axios";
-// Radix UI Components
-import * as Label from "@radix-ui/react-label";
 import { toast } from "sonner";
-import { Dialog, Flex, Grid, Text, TextArea } from "@radix-ui/themes";
-import { Eye, EyeClosed, UserPlus } from "lucide-react"; // Removed Check icon
-import { zodResolver } from "@hookform/resolvers/zod";
+import * as Label from "@radix-ui/react-label";
+import { Input } from "@/components/ui/input";
+import { z } from "zod";
 
-// Helper function to check file type
+interface CompanieEditProps {
+  data?: Partial<Company>;
+}
+
 const isImageFile = (file: File) => {
   return (
     file.type === "image/png" ||
@@ -43,7 +48,6 @@ const createCustomerSchema = z.object({
     .string()
     .min(6, "Telephone number must be at least 6 digits")
     .max(15, "Telephone number must be max 15 digits"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
   city: z.string().min(1, "City is required"),
   address: z.string().min(1, "Address is required").max(250),
   logo_file: z
@@ -56,10 +60,8 @@ const createCustomerSchema = z.object({
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 
-// --- Component ---
-export default function CreateCustomer() {
+export default function CompanieEdit({ data }: CompanieEditProps) {
   const [isLoading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { data: session } = useSession();
   const accessToken = session?.user?.access_token;
@@ -77,53 +79,53 @@ export default function CreateCustomer() {
       const formData = new FormData();
       formData.append("company_name", data.customer_company_name);
       formData.append("email", data.email);
-      formData.append("mobile", data.email);
+      formData.append("mobile", data.phone_number);
       formData.append("username", data.username);
-      formData.append("password", data.password);
-      formData.append("description", data.address || "");
-      formData.append("status", "active");
+      formData.append("status", data ? "active" : "inactive");
+      formData.append("description", data. || "");
 
-      // Handle file upload
       if (data.logo_file && data.logo_file.length > 0) {
         formData.append("logo_file", data.logo_file[0]);
       }
 
-      const response = await axios.post(`${DATA_API}/company`, formData, {
+      formData.forEach((v, k) => console.log(k, v));
+
+      const res = await fetch(`${DATA_API}/company/${company.company_id}`, {
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "multipart/form-data",
         },
+        body: formData,
       });
 
-      if (response.status === 200 || response.status === 201) {
-        toast.success("Company created successfully!");
-        reset(); // Clear the form fields
-        setOpen(false); // Close the Radix Dialog
-      }
-    } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.detail?.msg ||
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.response?.data?.detail ||
-        err.message ||
-        "Failed to create company";
+      const response = (await res.json()) as any;
 
-      setErrorMsg(errorMessage);
-      toast.error(errorMessage);
+      if (res.ok) {
+        toast.success(<Text>Company updated successfully!</Text>);
+        setOpen(false); // Close the Radix Dialog
+      } else {
+        setErrorMsg(
+          response?.detail?.msg ||
+            response?.detail ||
+            response?.message ||
+            "Failed to update company"
+        );
+        toast.error("Failed to update company");
+      }
+    } catch (error) {
+      setErrorMsg("Something went wrong, please try again.");
+      toast.error("Network error occurred");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- Rendered Form (UPDATED: Removed Checkbox) ---
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger>
-        <Button className="cursor-pointer">
-          <UserPlus className="w-4 h-4" />
-          <span className="ml-2">Add Company</span>
-        </Button>
+        <IconButton color="violet" variant="soft">
+          <SquarePen width="18" height="18" />
+        </IconButton>
       </Dialog.Trigger>
 
       <Dialog.Content maxWidth="600px">
@@ -246,33 +248,6 @@ export default function CreateCustomer() {
                   </p>
                 </div>
 
-                {/* Password + Toggle */}
-                <div>
-                  <Label.Root className="mb-1 block font-medium">
-                    Password
-                  </Label.Root>
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      {...register("password")}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-2.5"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                    >
-                      {showPassword ? (
-                        <EyeClosed className="w-4 h-4 text-gray-500" />
-                      ) : (
-                        <Eye className="w-4 h-4 text-gray-500" />
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-sm text-red-500">
-                    {errors.password?.message}
-                  </p>
-                </div>
-
                 {/* File Upload (Controlled) */}
                 <div>
                   <Label.Root className="mb-1 block font-medium">
@@ -308,8 +283,8 @@ export default function CreateCustomer() {
                 </div>
 
                 {/* The Radix Checkbox section for 'status' was removed here 
-                  as requested. 
-                */}
+                        as requested. 
+                      */}
               </div>
 
               {/* Error Message */}

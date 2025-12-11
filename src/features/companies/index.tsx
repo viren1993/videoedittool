@@ -5,9 +5,8 @@ import { useEffect, useState } from "react";
 
 import { DATA_API } from "@/config/constants";
 import CompanyTable from "./company-table";
-import { Grid } from "@radix-ui/themes";
-import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
+import { Flex, Grid } from "@radix-ui/themes";
+import CreateCustomer from "./create-company";
 
 export interface CompanyListProps {
   company_id: string;
@@ -33,7 +32,7 @@ export default function Companies() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [companies, setCompanies] = useState(null as CompanyListProps[] | any);
-  console.log("companies", companies);
+  console.log(companies, "companies");
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -46,10 +45,7 @@ export default function Companies() {
             Authorization: `Bearer ${session?.user.access_token}`,
           },
         });
-        console.log("res", res);
-
         if (!res.ok) {
-          console.error("Failed to fetch company data:", res.status);
           return;
         }
 
@@ -71,16 +67,10 @@ export default function Companies() {
 
   return (
     <>
-      <Grid className="flex">
-        <h1>Companies get call</h1>
-        <Button
-          className="w-full cursor-pointer"
-          // onClick={() => setShowUploadModal(true)}
-        >
-          <UserPlus className="w-4 h-4" />
-          <span className="ml-2">Add Companie</span>
-        </Button>
-      </Grid>
+      <Flex gap="2" justify="between">
+        <h1>Companies List</h1>
+        <CreateCustomer />
+      </Flex>
       {companies?.length > 0 && <CompanyTable data={companies} />}
     </>
   );

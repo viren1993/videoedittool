@@ -1,17 +1,44 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   AllCommunityModule,
   ModuleRegistry,
   GridApi,
   ColDef,
+  ICellRendererParams,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { Company } from "./type";
+import { IconButton } from "@radix-ui/themes";
+import { SquarePen, Trash2 } from "lucide-react";
+import CompanieDelete from "./companie-delete";
+import CompanieEdit from "./companie-edit";
+// Assuming you have 'type.ts' defined with the Company interface
+// import { Company } from "./type";
+
+// Placeholder for the Company type if 'type.ts' is not provided
+type Company = {
+  company_name: string;
+  email: string;
+  mobile: string;
+  status: string;
+  created_at: string;
+};
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
+// --- Action Cell Renderer Component ---
+const ActionCellRenderer = (props: ICellRendererParams<Company>) => {
+  return (
+    <div style={{ display: "flex", gap: "8px", marginTop: "3px" }}>
+      <CompanieEdit data={props?.data} />
+      <CompanieDelete data={props?.data} />
+    </div>
+  );
+  //
+};
+
+// --- Main CompanyTable Component ---
 export default function CompanyTable({ data }: { data: Company[] }) {
   const [rowData] = useState<Company[]>(data);
   const [loading, setLoading] = useState(true);
@@ -27,9 +54,17 @@ export default function CompanyTable({ data }: { data: Company[] }) {
       valueFormatter: (params) =>
         params.value ? new Date(params.value).toLocaleDateString() : "",
     },
+    {
+      headerName: "Actions",
+      cellRenderer: ActionCellRenderer,
+      sortable: false,
+      filter: false,
+      maxWidth: 200,
+      resizable: false,
+    },
   ]);
 
-  const defaultColDef = { flex: 1 };
+  const defaultColDef = { flex: 1, minWidth: 150 };
   const [quickFilterText, setQuickFilterText] = useState("");
 
   const [gridApi, setGridApi] = useState<GridApi<Company> | null>(null);
@@ -96,9 +131,9 @@ export default function CompanyTable({ data }: { data: Company[] }) {
         defaultColDef={defaultColDef}
         quickFilterText={quickFilterText}
         onGridReady={onGridReady}
-        pagination={true}               // ✅ enable pagination
-        paginationPageSize={20}         // ✅ 20 rows per page
-        paginationPageSizeSelector={[20, 50, 100]} // optional: dropdown
+        pagination={true}
+        paginationPageSize={20}
+        paginationPageSizeSelector={[20, 50, 100]}
       />
     </div>
   );
