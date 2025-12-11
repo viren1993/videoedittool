@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 
 import { DATA_API } from "@/config/constants";
 import CompanyTable from "./company-table";
+import { Grid } from "@radix-ui/themes";
+import { Button } from "@/components/ui/button";
+import { UserPlus } from "lucide-react";
 
 export interface CompanyListProps {
   company_id: string;
@@ -68,7 +71,16 @@ export default function Companies() {
 
   return (
     <>
-      <h1>Companies get call</h1>
+      <Grid className="flex">
+        <h1>Companies get call</h1>
+        <Button
+          className="w-full cursor-pointer"
+          // onClick={() => setShowUploadModal(true)}
+        >
+          <UserPlus className="w-4 h-4" />
+          <span className="ml-2">Add Companie</span>
+        </Button>
+      </Grid>
       {companies?.length > 0 && <CompanyTable data={companies} />}
     </>
   );
