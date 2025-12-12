@@ -14,7 +14,7 @@ export default function Customer() {
   const [isLoading, setIsLoading] = useState(false);
   const [customersData, setcustomersData] = useState(
     null as CustomerPorps[] | any
-  ); 
+  );
 
   useEffect(() => {
     const fetchCompany = async () => {

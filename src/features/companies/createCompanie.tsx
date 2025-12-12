@@ -30,7 +30,7 @@ const isImageFile = (file: File) => {
 
 // --- Zod Schema for Validation (STATUS REMOVED) ---
 const createCustomerSchema = z.object({
-  company_name: z.string().min(1, { message: 'Company name is required' }),
+  company_name: z.string().min(1, { message: "Company name is required" }),
   username: z.string().min(1).max(20, "Username must be max 20 characters"),
   email: z.string().min(1, "Email is required").email("Invalid email format"),
   mobile: z
@@ -38,13 +38,13 @@ const createCustomerSchema = z.object({
     .min(10, "Phone number must be 10 digits")
     .max(10, "Phone number must be 10 digits")
     .regex(/^[0-9]{10}$/, "Phone number must contain only digits"),
-   password: z
+  password: z
     .string()
-    .min(8, { message: 'Password must be at least 8 characters long' }),
+    .min(8, { message: "Password must be at least 8 characters long" }),
   description: z
     .string()
-    .min(1, { message: 'Description is required' })
-    .max(500, { message: 'Description too long' }),
+    .min(1, { message: "Description is required" })
+    .max(500, { message: "Description too long" }),
   logo_file: z
     .any()
     .refine((files) => !files || files.length === 0 || isImageFile(files[0]), {

@@ -32,7 +32,6 @@ export default function Companies() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [companies, setCompanies] = useState(null as CompanyListProps[] | any);
-  console.log(companies, "companies");
 
   useEffect(() => {
     const fetchCompany = async () => {

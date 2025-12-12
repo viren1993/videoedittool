@@ -12,6 +12,8 @@ import { AgGridReact } from "ag-grid-react";
 import DeleteCustomer from "./deleteCustomer";
 import EditCustomer from "./editCustomer";
 import { CustomerPorps } from "./type";
+import { Button, Flex } from "@radix-ui/themes";
+import { Input } from "@/components/ui/input";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -77,32 +79,28 @@ export default function CustomerTable({ data }: { data: CustomerPorps[] }) {
   };
 
   return (
-    <div className="ag-theme-quartz" style={{ height: 550, width: "100%" }}>
-      <div style={{ marginBottom: "10px" }}>
-        <input
+    <>
+      <Flex className="mb-4 mt-4 gap-4">
+        <Input
           type="text"
           placeholder="Search..."
           value={quickFilterText}
           onChange={(e) => setQuickFilterText(e.target.value)}
         />
-
-        <button
-          onClick={handleSlowCsvDownload}
-        >
-          Download CSV (Slow)
-        </button>
+        <Button onClick={handleSlowCsvDownload}>Download CSV (Slow)</Button>
+      </Flex>
+      <div className="ag-theme-quartz" style={{ height: 440, width: "100%" }}>
+        <AgGridReact
+          rowData={rowData}
+          columnDefs={colDefs}
+          defaultColDef={defaultColDef}
+          quickFilterText={quickFilterText}
+          onGridReady={onGridReady}
+          pagination={true}
+          paginationPageSize={20}
+          paginationPageSizeSelector={[20, 50, 100]}
+        />
       </div>
-
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={colDefs}
-        defaultColDef={defaultColDef}
-        quickFilterText={quickFilterText}
-        onGridReady={onGridReady}
-        pagination={true}
-        paginationPageSize={20}
-        paginationPageSizeSelector={[20, 50, 100]}
-      />
-    </div>
+    </>
   );
 }

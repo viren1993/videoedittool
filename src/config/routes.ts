@@ -18,5 +18,6 @@ export const routes = {
     templates: "company/templates",
     customer: "company/customer",
     upload: "company/customer/upload",
+    edit: "edit",
   },
 };

@@ -63,6 +63,7 @@ export default function CreateCustomer() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { data: session } = useSession();
   const accessToken = session?.user?.access_token;
+  console.log(accessToken, "accessToken");
   const [open, setOpen] = useState(false);
   const formMethods = useForm<CreateCustomerInput>({
     resolver: zodResolver(createCustomerSchema),
@@ -75,15 +76,15 @@ export default function CreateCustomer() {
 
     try {
       const formData = new FormData();
-      formData.append('customer_company_name', data.customer_company_name);
-      formData.append('full_name', data.full_name);
-      formData.append('username', data.username);
-      formData.append('email', data.email);
-      formData.append('password', data.password);
-      formData.append('city', data.city);
-      formData.append('phone_number', data.phone_number);
-      formData.append('telephone_number', data.telephone_number);
-      formData.append('address', data.address);
+      formData.append("customer_company_name", data.customer_company_name);
+      formData.append("full_name", data.full_name);
+      formData.append("username", data.username);
+      formData.append("email", data.email);
+      formData.append("password", data.password);
+      formData.append("city", data.city);
+      formData.append("phone_number", data.phone_number);
+      formData.append("telephone_number", data.telephone_number);
+      formData.append("address", data.address);
       formData.append("status", "active");
 
       // Handle file upload
@@ -130,10 +131,6 @@ export default function CreateCustomer() {
 
       <Dialog.Content maxWidth="600px">
         <Dialog.Title>Customer Create</Dialog.Title>
-        <Dialog.Description>
-          Add a new company to your account.
-        </Dialog.Description>
-
         <Form<CreateCustomerInput>
           onSubmit={onSubmit}
           validationSchema={createCustomerSchema}

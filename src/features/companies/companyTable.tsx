@@ -11,6 +11,10 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import DeleteCompanie from "./deleteCompanie";
 import EditCompanie from "./editCompanie";
+import { Dialog, Flex, Grid, IconButton } from "@radix-ui/themes";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { SquarePen } from "lucide-react";
 
 // Placeholder for the Company type if 'type.ts' is not provided
 type Company = {
@@ -25,9 +29,18 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 // --- Action Cell Renderer Component ---
 const ActionCellRenderer = (props: ICellRendererParams<Company>) => {
+  const [open, setOpen] = useState(false);
+
   return (
     <div style={{ display: "flex", gap: "8px", marginTop: "3px" }}>
-      <EditCompanie data={props?.data} />
+      <Dialog.Root open={open} onOpenChange={setOpen}>
+        <Dialog.Trigger>
+          <IconButton color="violet" variant="soft">
+            <SquarePen width="18" height="18" />
+          </IconButton>
+        </Dialog.Trigger>
+        <EditCompanie data={props?.data} open={open} setOpen={setOpen} />
+      </Dialog.Root>
       <DeleteCompanie data={props?.data} />
     </div>
   );
@@ -37,7 +50,6 @@ const ActionCellRenderer = (props: ICellRendererParams<Company>) => {
 // --- Main CompanyTable Component ---
 export default function CompanyTable({ data }: { data: Company[] }) {
   const [rowData] = useState<Company[]>(data);
-  const [loading, setLoading] = useState(true);
 
   const [colDefs] = useState<ColDef<Company>[]>([
     { headerName: "Company", field: "company_name", filter: true },
@@ -67,10 +79,7 @@ export default function CompanyTable({ data }: { data: Company[] }) {
 
   const onGridReady = (params: any) => {
     setGridApi(params.api as GridApi<Company>);
-
-    // Simulate loading time
     setTimeout(() => {
-      setLoading(false);
       params.api.hideOverlay();
     }, 1500);
 
@@ -88,32 +97,33 @@ export default function CompanyTable({ data }: { data: Company[] }) {
   };
 
   return (
-    <div className="ag-theme-quartz" style={{ height: 550, width: "100%" }}>
-      <div style={{ marginBottom: "10px" }}>
-        <input
+    <>
+      <Flex className="gap-4 justify-between mt-4 mb-4">
+        <Input
           type="text"
           placeholder="Search..."
           value={quickFilterText}
           onChange={(e) => setQuickFilterText(e.target.value)}
         />
-
-        <button
-          onClick={handleSlowCsvDownload}
-        >
-          Download CSV (Slow)
-        </button>
+        <Button variant="secondary" onClick={handleSlowCsvDownload}>
+          Download CSV
+        </Button>
+      </Flex>
+      <div
+        className="ag-theme-alpine"
+        style={{ height: "440px", width: "100%" }}
+      >
+        <AgGridReact
+          rowData={rowData}
+          columnDefs={colDefs}
+          defaultColDef={defaultColDef}
+          quickFilterText={quickFilterText}
+          onGridReady={onGridReady}
+          pagination={true}
+          paginationPageSize={20}
+          paginationPageSizeSelector={[20, 50, 100]}
+        />
       </div>
-
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={colDefs}
-        defaultColDef={defaultColDef}
-        quickFilterText={quickFilterText}
-        onGridReady={onGridReady}
-        pagination={true}
-        paginationPageSize={20}
-        paginationPageSizeSelector={[20, 50, 100]}
-      />
-    </div>
+    </>
   );
 }

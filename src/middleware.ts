@@ -25,7 +25,6 @@ export async function middleware(request: NextRequest) {
   }
 
   const user = token as CustomUser;
-
   // 🛡 Role-based protection
   if (
     request.nextUrl.pathname.startsWith("/organization") &&
