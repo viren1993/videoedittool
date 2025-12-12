@@ -9,41 +9,31 @@ import {
   ICellRendererParams,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import CompanieDelete from "./deleteCustomer";
-import CompanieEdit from "./editCustomer";
-
-// Placeholder for the Company type if 'type.ts' is not provided
-type Company = {
-  company_name: string;
-  email: string;
-  mobile: string;
-  status: string;
-  created_at: string;
-};
+import DeleteCustomer from "./deleteCustomer";
+import EditCustomer from "./editCustomer";
+import { CustomerPorps } from "./type";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-// --- Action Cell Renderer Component ---
-const ActionCellRenderer = (props: ICellRendererParams<Company>) => {
+const ActionCellRenderer = (props: ICellRendererParams<CustomerPorps>) => {
   return (
     <div style={{ display: "flex", gap: "8px", marginTop: "3px" }}>
-      <CompanieEdit data={props?.data} />
-      <CompanieDelete data={props?.data} />
+      {/* <EditCustomer data={props?.data} /> */}
+      <DeleteCustomer data={props?.data} />
     </div>
   );
   //
 };
 
-// --- Main CompanyTable Component ---
-export default function CompanyTable({ data }: { data: Company[] }) {
-  const [rowData] = useState<Company[]>(data);
-  const [loading, setLoading] = useState(true);
-
-  const [colDefs] = useState<ColDef<Company>[]>([
-    { headerName: "Company", field: "company_name", filter: true },
-    { headerName: "Email", field: "email", filter: true },
-    { headerName: "Mobile", field: "mobile" },
+export default function CustomerTable({ data }: { data: CustomerPorps[] }) {
+  const [rowData] = useState<CustomerPorps[]>(data);
+  const [colDefs] = useState<ColDef<CustomerPorps>[]>([
+    { headerName: "Company", field: "customer_company_name", filter: true },
+    { headerName: "Full Name", field: "full_name", filter: true },
+    { headerName: "Email", field: "user.email", filter: true },
+    { headerName: "Mobile", field: "phone_number" },
     { headerName: "Status", field: "status", filter: true },
+    { headerName: "City", field: "city" },
     {
       headerName: "Created",
       field: "created_at",
@@ -63,14 +53,13 @@ export default function CompanyTable({ data }: { data: Company[] }) {
   const defaultColDef = { flex: 1, minWidth: 150 };
   const [quickFilterText, setQuickFilterText] = useState("");
 
-  const [gridApi, setGridApi] = useState<GridApi<Company> | null>(null);
+  const [gridApi, setGridApi] = useState<GridApi<CustomerPorps> | null>(null);
 
   const onGridReady = (params: any) => {
-    setGridApi(params.api as GridApi<Company>);
+    setGridApi(params.api as GridApi<CustomerPorps>);
 
     // Simulate loading time
     setTimeout(() => {
-      setLoading(false);
       params.api.hideOverlay();
     }, 1500);
 

@@ -16,7 +16,7 @@ import axios from "axios";
 import * as Label from "@radix-ui/react-label";
 import { toast } from "sonner";
 import { Dialog, Flex, Grid, Text, TextArea } from "@radix-ui/themes";
-import { Eye, EyeClosed, UserPlus } from "lucide-react"; // Removed Check icon
+import { Eye, EyeClosed, UserPlus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 // Helper function to check file type
@@ -75,12 +75,15 @@ export default function CreateCustomer() {
 
     try {
       const formData = new FormData();
-      formData.append("company_name", data.customer_company_name);
-      formData.append("email", data.email);
-      formData.append("mobile", data.email);
-      formData.append("username", data.username);
-      formData.append("password", data.password);
-      formData.append("description", data.address || "");
+      formData.append('customer_company_name', data.customer_company_name);
+      formData.append('full_name', data.full_name);
+      formData.append('username', data.username);
+      formData.append('email', data.email);
+      formData.append('password', data.password);
+      formData.append('city', data.city);
+      formData.append('phone_number', data.phone_number);
+      formData.append('telephone_number', data.telephone_number);
+      formData.append('address', data.address);
       formData.append("status", "active");
 
       // Handle file upload
@@ -88,7 +91,7 @@ export default function CreateCustomer() {
         formData.append("logo_file", data.logo_file[0]);
       }
 
-      const response = await axios.post(`${DATA_API}/company`, formData, {
+      const response = await axios.post(`${DATA_API}/customer`, formData, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "multipart/form-data",
@@ -96,9 +99,9 @@ export default function CreateCustomer() {
       });
 
       if (response.status === 200 || response.status === 201) {
-        toast.success("Company created successfully!");
-        reset(); // Clear the form fields
-        setOpen(false); // Close the Radix Dialog
+        toast.success("Customer created successfully!");
+        reset();
+        setOpen(false);
       }
     } catch (err: any) {
       const errorMessage =
@@ -116,18 +119,17 @@ export default function CreateCustomer() {
     }
   };
 
-  // --- Rendered Form (UPDATED: Removed Checkbox) ---
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger>
         <Button className="cursor-pointer">
           <UserPlus className="w-4 h-4" />
-          <span className="ml-2">Add Company</span>
+          <span className="ml-2">Add Customer</span>
         </Button>
       </Dialog.Trigger>
 
       <Dialog.Content maxWidth="600px">
-        <Dialog.Title>Create Company</Dialog.Title>
+        <Dialog.Title>Customer Create</Dialog.Title>
         <Dialog.Description>
           Add a new company to your account.
         </Dialog.Description>
@@ -306,10 +308,6 @@ export default function CreateCustomer() {
                     )}
                   />
                 </div>
-
-                {/* The Radix Checkbox section for 'status' was removed here 
-                  as requested. 
-                */}
               </div>
 
               {/* Error Message */}
