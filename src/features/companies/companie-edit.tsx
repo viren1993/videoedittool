@@ -1,6 +1,5 @@
 "use client";
 
-import { Company } from "./type";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
@@ -9,11 +8,12 @@ import {
   Button,
   Dialog,
   Flex,
+  Grid,
   IconButton,
   Text,
   TextArea,
 } from "@radix-ui/themes";
-import { Eye, EyeClosed, Grid, SquarePen, UserPlus } from "lucide-react";
+import { SquarePen } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { DATA_API } from "@/config/constants";
 import { toast } from "sonner";
@@ -21,8 +21,26 @@ import * as Label from "@radix-ui/react-label";
 import { Input } from "@/components/ui/input";
 import { z } from "zod";
 
+export interface GetCompany {
+  company_name: string;
+  description: string;
+  mobile: string;
+  logo_url: string;
+  user_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  email: string;
+  username: string;
+  company_id: string;
+  role: string;
+  user_status: string;
+  user_created_at: string;
+  user_updated_at: string;
+}
+
 interface CompanieEditProps {
-  data?: Partial<Company>;
+  data?: Partial<GetCompany>;
 }
 
 const isImageFile = (file: File) => {
@@ -71,45 +89,46 @@ export default function CompanieEdit({ data }: CompanieEditProps) {
   });
   const { reset } = formMethods;
 
-  const onSubmit: SubmitHandler<CreateCustomerInput> = async (data) => {
+  const onSubmit: SubmitHandler<CreateCustomerInput> = async (
+    formDataInput
+  ) => {
     setLoading(true);
     setErrorMsg(null);
 
     try {
       const formData = new FormData();
-      formData.append("company_name", data.customer_company_name);
-      formData.append("email", data.email);
-      formData.append("mobile", data.phone_number);
-      formData.append("username", data.username);
-      formData.append("status", data ? "active" : "inactive");
-      formData.append("description", data. || "");
 
-      if (data.logo_file && data.logo_file.length > 0) {
-        formData.append("logo_file", data.logo_file[0]);
+      formData.append("company_name", formDataInput.customer_company_name);
+      formData.append("email", formDataInput.email);
+      formData.append("mobile", formDataInput.phone_number);
+      formData.append("username", formDataInput.username);
+      formData.append("status", data?.status || "active");
+
+      // FIX: description = address
+      formData.append("description", formDataInput.address || "");
+
+      if (formDataInput.logo_file && formDataInput.logo_file[0]) {
+        formData.append("logo_file", formDataInput.logo_file[0]);
       }
 
-      formData.forEach((v, k) => console.log(k, v));
+      const companyId = data?.company_id;
+      if (!companyId) {
+        throw new Error("Company ID is missing for update.");
+      }
 
-      const res = await fetch(`${DATA_API}/company/${company.company_id}`, {
+      const res = await fetch(`${DATA_API}/company/${companyId}`, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
         body: formData,
       });
 
-      const response = (await res.json()) as any;
+      const response = await res.json();
 
       if (res.ok) {
         toast.success(<Text>Company updated successfully!</Text>);
-        setOpen(false); // Close the Radix Dialog
+        setOpen(false);
       } else {
-        setErrorMsg(
-          response?.detail?.msg ||
-            response?.detail ||
-            response?.message ||
-            "Failed to update company"
-        );
+        setErrorMsg(response?.detail || "Failed to update company");
         toast.error("Failed to update company");
       }
     } catch (error) {
@@ -122,80 +141,115 @@ export default function CompanieEdit({ data }: CompanieEditProps) {
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
+           
       <Dialog.Trigger>
+               
         <IconButton color="violet" variant="soft">
-          <SquarePen width="18" height="18" />
+                    <SquarePen width="18" height="18" />       
         </IconButton>
+             
       </Dialog.Trigger>
-
+           
       <Dialog.Content maxWidth="600px">
-        <Dialog.Title>Create Company</Dialog.Title>
+                <Dialog.Title>Edit Company</Dialog.Title>       
         <Dialog.Description>
-          Add a new company to your account.
+                    Edit the company details.        
         </Dialog.Description>
-
+               
         <Form<CreateCustomerInput>
           onSubmit={onSubmit}
           validationSchema={createCustomerSchema}
           useFormProps={{
-            resolver: zodResolver(createCustomerSchema),
+            defaultValues: {
+              customer_company_name: data?.company_name || "",
+              full_name: data?.company_name || "",
+              username: data?.username || "",
+              email: data?.email || "",
+              phone_number: data?.mobile?.replace("+91-", "") || "",
+              telephone_number: "",
+              city: "",
+              address: data?.description || "",
+              logo_file: undefined,
+            },
           }}
           className="grid grid-cols-1 gap-6 mt-4"
         >
+                   
           {({ register, control, formState: { errors } }) => (
             <>
+                           
               <div className="grid gap-4">
-                {/* Customer Company Name */}
+                                {/* Customer Company Name */}               
                 <div>
+                                   
                   <Label.Root className="mb-1 block font-medium">
-                    Customer Company Name
+                                        Customer Company Name                  
                   </Label.Root>
-                  <Input {...register("customer_company_name")} />
+                                   
+                  <Input {...register("customer_company_name")} />             
+                     
                   <p className="text-sm text-red-500">
-                    {errors.customer_company_name?.message}
+                                        {errors.customer_company_name?.message} 
+                                   
                   </p>
+                                 
                 </div>
-
-                {/* Full Name */}
+                                {/* Full Name */}               
                 <div>
+                                   
                   <Label.Root className="mb-1 block font-medium">
-                    Full Name
+                                        Full Name                  
                   </Label.Root>
-                  <Input {...register("full_name")} />
+                                    <Input {...register("full_name")} />       
+                           
                   <p className="text-sm text-red-500">
-                    {errors.full_name?.message}
+                                        {errors.full_name?.message}             
+                       
                   </p>
+                                 
                 </div>
-
+                               
                 <Flex gap="2">
-                  {/* Username */}
+                                    {/* Username */}                 
                   <Grid width={"100%"}>
+                                       
                     <Label.Root className="mb-1 block font-medium">
-                      Username
+                                            Username                    
                     </Label.Root>
-                    <Input {...register("username")} />
+                                        <Input {...register("username")} />     
+                                 
                     <p className="text-sm text-red-500">
-                      {errors.username?.message}
+                                            {errors.username?.message}         
+                               
                     </p>
+                                     
                   </Grid>
-
-                  {/* Email */}
+                                    {/* Email */}                 
                   <Grid width={"100%"}>
+                                       
                     <Label.Root className="mb-1 block font-medium">
-                      Email
+                                            Email                    
                     </Label.Root>
-                    <Input {...register("email")} type="email" />
+                                       
+                    <Input {...register("email")} type="email" />               
+                       
                     <p className="text-sm text-red-500">
-                      {errors.email?.message}
+                                            {errors.email?.message}             
+                           
                     </p>
+                                     
                   </Grid>
+                                 
                 </Flex>
+                               
                 <Flex gap="3">
-                  {/* Phone Number */}
+                                    {/* Phone Number */}                 
                   <Grid width={"100%"}>
+                                       
                     <Label.Root className="mb-1 block font-medium">
-                      Phone Number
+                                            Phone Number                    
                     </Label.Root>
+                                       
                     <Input
                       placeholder="Enter 10 digit phone number"
                       maxLength={10}
@@ -207,105 +261,134 @@ export default function CompanieEdit({ data }: CompanieEditProps) {
                         );
                       }}
                     />
+                                       
                     <p className="text-sm text-red-500">
-                      {errors.phone_number?.message}
+                                            {errors.phone_number?.message}     
+                                   
                     </p>
+                                     
                   </Grid>
-
-                  {/* Telephone Number */}
+                                    {/* Telephone Number */}                 
                   <Grid width={"100%"}>
+                                       
                     <Label.Root className="mb-1 block font-medium">
-                      Telephone Number
+                                            Telephone Number                    
                     </Label.Root>
-                    <Input {...register("telephone_number")} />
+                                       
+                    <Input {...register("telephone_number")} />                 
+                     
                     <p className="text-sm text-red-500">
-                      {errors.telephone_number?.message}
+                                            {errors.telephone_number?.message} 
+                                       
                     </p>
+                                     
                   </Grid>
+                                 
                 </Flex>
-
-                {/* City */}
+                                {/* City */}               
                 <div>
+                                   
                   <Label.Root className="mb-1 block font-medium">
-                    City
+                                        City                  
                   </Label.Root>
-                  <Input {...register("city")} />
+                                    <Input {...register("city")} />             
+                     
                   <p className="text-sm text-red-500">{errors.city?.message}</p>
+                                 
                 </div>
-
-                {/* Address (Textarea) */}
+                                {/* Address (Textarea) */}               
                 <div>
+                                   
                   <Label.Root className="mb-1 block font-medium">
-                    Address
+                                        Address                  
                   </Label.Root>
+                                   
                   <TextArea
                     {...register("address")}
                     className="w-full"
                     rows={3}
                   />
+                                   
                   <p className="text-sm text-red-500">
-                    {errors.address?.message}
+                                        {errors.address?.message}               
+                     
                   </p>
+                                 
                 </div>
-
-                {/* File Upload (Controlled) */}
+                                {/* File Upload (Controlled) */}               
                 <div>
+                                   
                   <Label.Root className="mb-1 block font-medium">
-                    Upload Logo (PNG/JPG/JPEG)
+                                        Upload Logo (PNG/JPG/JPEG)              
+                       
                   </Label.Root>
+                                   
                   <Controller
                     name="logo_file"
                     control={control}
                     render={({ field: { onChange, value } }) => (
                       <div>
+                                               
                         <input
-                          type="file"
-                          // Use the accept attribute to suggest file types
+                          type="file" // Use the accept attribute to suggest file types
                           accept=".png, .jpg, .jpeg, image/png, image/jpeg"
-                          className="block border p-2 rounded"
-                          // Use onChange to capture the FileList and update the form state
+                          className="block border p-2 rounded" // Use onChange to capture the FileList and update the form state
                           onChange={(e) => onChange(e.target.files)}
                         />
+                                               
                         {/* Display the selected file name if a file is present */}
+                                               
                         {value?.length > 0 && (
                           <Text className="text-green-600 text-sm mt-2">
-                            Selected: **{value[0].name}** (
-                            {(value[0].size / 1024).toFixed(2)} KB)
+                                                        Selected: **
+                            {value[0].name}** (                            
+                            {(value[0].size / 1024).toFixed(2)} KB)            
+                                         
                           </Text>
                         )}
-                        {/* Ensure message is treated as a string */}
+                                               
+                        {/* Ensure message is treated as a string */}           
+                                   
                         <p className="text-sm text-red-500 mt-1">
-                          {errors.logo_file?.message?.toString()}
+                                                   
+                          {errors.logo_file?.message?.toString()}               
+                                 
                         </p>
+                                             
                       </div>
                     )}
                   />
+                                 
                 </div>
-
-                {/* The Radix Checkbox section for 'status' was removed here 
-                        as requested. 
-                      */}
+                             
               </div>
-
-              {/* Error Message */}
+                            {/* Error Message */}             
               {errorMsg && (
                 <span className="text-sm text-red-500">{errorMsg}</span>
               )}
-
-              {/* Footer Buttons */}
+                            {/* Footer Buttons */}             
               <div className="flex items-center justify-end gap-4">
+                               
                 <Dialog.Close>
+                                   
                   <Button type="button" variant="ghost" disabled={isLoading}>
-                    Cancel
+                                        Cancel                  
                   </Button>
+                                 
                 </Dialog.Close>
+                               
                 <Button disabled={isLoading} type="submit">
-                  {isLoading ? "Saving..." : "Save"}
+                                    {isLoading ? "Saving..." : "Save"}         
+                       
                 </Button>
+                             
               </div>
+                         
             </>
           )}
+                 
         </Form>
+             
       </Dialog.Content>
     </Dialog.Root>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
   AllCommunityModule,
   ModuleRegistry,
@@ -9,12 +9,8 @@ import {
   ICellRendererParams,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { IconButton } from "@radix-ui/themes";
-import { SquarePen, Trash2 } from "lucide-react";
 import CompanieDelete from "./companie-delete";
 import CompanieEdit from "./companie-edit";
-// Assuming you have 'type.ts' defined with the Company interface
-// import { Company } from "./type";
 
 // Placeholder for the Company type if 'type.ts' is not provided
 type Company = {
@@ -31,7 +27,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 const ActionCellRenderer = (props: ICellRendererParams<Company>) => {
   return (
     <div style={{ display: "flex", gap: "8px", marginTop: "3px" }}>
-      <CompanieEdit data={props?.data} />
+      {/* <CompanieEdit data={props?.data} /> */}
       <CompanieDelete data={props?.data} />
     </div>
   );
