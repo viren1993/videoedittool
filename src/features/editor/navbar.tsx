@@ -86,9 +86,9 @@ export default function Navbar({
     >
       <DownloadProgressModal />
       <div className="flex items-center gap-2">
-        <div className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-md text-zinc-200">
-          <LogoIcons.scenify />
-        </div>
+        {/* <div className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-md text-zinc-200"> */}
+        {/* <LogoIcons.scenify /> */}
+        {/* </div> */}
 
         <div className=" pointer-events-auto flex h-10 items-center px-1.5">
           <Button

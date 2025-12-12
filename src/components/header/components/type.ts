@@ -51,7 +51,7 @@ export const companyMenuItems: MenuItem[] = [
     children: [
       {
         name: "Video Templates",
-        href: "/company/templates/video",
+        href: "/edit",
         desc: "Browse & customize video templates.",
       },
       {

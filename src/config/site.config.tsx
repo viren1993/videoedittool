@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import logoImg from "../../public/delta-logo.png";
-import logoIconImg from "../../public/favicon.ico";
+import logoIconImg from "../../public/favicon.png";
 import { OpenGraph } from "next/dist/lib/metadata/types/opengraph-types";
 
 enum MODE {
