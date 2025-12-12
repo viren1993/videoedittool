@@ -30,22 +30,21 @@ const isImageFile = (file: File) => {
 
 // --- Zod Schema for Validation (STATUS REMOVED) ---
 const createCustomerSchema = z.object({
-  customer_company_name: z.string().min(1, "Customer company name is required"),
-  full_name: z.string().min(1, "Full name is required"),
+  company_name: z.string().min(1, { message: 'Company name is required' }),
   username: z.string().min(1).max(20, "Username must be max 20 characters"),
   email: z.string().min(1, "Email is required").email("Invalid email format"),
-  phone_number: z
+  mobile: z
     .string()
     .min(10, "Phone number must be 10 digits")
     .max(10, "Phone number must be 10 digits")
     .regex(/^[0-9]{10}$/, "Phone number must contain only digits"),
-  telephone_number: z
+   password: z
     .string()
-    .min(6, "Telephone number must be at least 6 digits")
-    .max(15, "Telephone number must be max 15 digits"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  city: z.string().min(1, "City is required"),
-  address: z.string().min(1, "Address is required").max(250),
+    .min(8, { message: 'Password must be at least 8 characters long' }),
+  description: z
+    .string()
+    .min(1, { message: 'Description is required' })
+    .max(500, { message: 'Description too long' }),
   logo_file: z
     .any()
     .refine((files) => !files || files.length === 0 || isImageFile(files[0]), {
@@ -75,12 +74,12 @@ export default function CreateCustomer() {
 
     try {
       const formData = new FormData();
-      formData.append("company_name", data.customer_company_name);
+      formData.append("company_name", data.company_name);
       formData.append("email", data.email);
       formData.append("mobile", data.email);
       formData.append("username", data.username);
       formData.append("password", data.password);
-      formData.append("description", data.address || "");
+      formData.append("description", data.description || "");
       formData.append("status", "active");
 
       // Handle file upload
@@ -148,88 +147,52 @@ export default function CreateCustomer() {
                   <Label.Root className="mb-1 block font-medium">
                     Customer Company Name
                   </Label.Root>
-                  <Input {...register("customer_company_name")} />
+                  <Input {...register("company_name")} />
                   <p className="text-sm text-red-500">
-                    {errors.customer_company_name?.message}
+                    {errors.company_name?.message}
                   </p>
                 </div>
-
-                {/* Full Name */}
-                <div>
+                {/* Username */}
+                <Grid width={"100%"}>
                   <Label.Root className="mb-1 block font-medium">
-                    Full Name
+                    Username
                   </Label.Root>
-                  <Input {...register("full_name")} />
+                  <Input {...register("username")} />
                   <p className="text-sm text-red-500">
-                    {errors.full_name?.message}
+                    {errors.username?.message}
                   </p>
-                </div>
+                </Grid>
 
-                <Flex gap="2">
-                  {/* Username */}
-                  <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
-                      Username
-                    </Label.Root>
-                    <Input {...register("username")} />
-                    <p className="text-sm text-red-500">
-                      {errors.username?.message}
-                    </p>
-                  </Grid>
-
-                  {/* Email */}
-                  <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
-                      Email
-                    </Label.Root>
-                    <Input {...register("email")} type="email" />
-                    <p className="text-sm text-red-500">
-                      {errors.email?.message}
-                    </p>
-                  </Grid>
-                </Flex>
-                <Flex gap="3">
-                  {/* Phone Number */}
-                  <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
-                      Phone Number
-                    </Label.Root>
-                    <Input
-                      placeholder="Enter 10 digit phone number"
-                      maxLength={10}
-                      {...register("phone_number")}
-                      onInput={(e) => {
-                        e.currentTarget.value = e.currentTarget.value.replace(
-                          /[^0-9]/g,
-                          ""
-                        );
-                      }}
-                    />
-                    <p className="text-sm text-red-500">
-                      {errors.phone_number?.message}
-                    </p>
-                  </Grid>
-
-                  {/* Telephone Number */}
-                  <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
-                      Telephone Number
-                    </Label.Root>
-                    <Input {...register("telephone_number")} />
-                    <p className="text-sm text-red-500">
-                      {errors.telephone_number?.message}
-                    </p>
-                  </Grid>
-                </Flex>
-
-                {/* City */}
-                <div>
+                {/* Email */}
+                <Grid width={"100%"}>
                   <Label.Root className="mb-1 block font-medium">
-                    City
+                    Email
                   </Label.Root>
-                  <Input {...register("city")} />
-                  <p className="text-sm text-red-500">{errors.city?.message}</p>
-                </div>
+                  <Input {...register("email")} type="email" />
+                  <p className="text-sm text-red-500">
+                    {errors.email?.message}
+                  </p>
+                </Grid>
+                {/* Phone Number */}
+                <Grid width={"100%"}>
+                  <Label.Root className="mb-1 block font-medium">
+                    Phone Number
+                  </Label.Root>
+                  <Input
+                    placeholder="Enter 10 digit phone number"
+                    maxLength={10}
+                    {...register("mobile")}
+                    onInput={(e) => {
+                      e.currentTarget.value = e.currentTarget.value.replace(
+                        /[^0-9]/g,
+                        ""
+                      );
+                    }}
+                  />
+                  <p className="text-sm text-red-500">
+                    {errors.mobile?.message}
+                  </p>
+                </Grid>
 
                 {/* Address (Textarea) */}
                 <div>
@@ -237,12 +200,12 @@ export default function CreateCustomer() {
                     Address
                   </Label.Root>
                   <TextArea
-                    {...register("address")}
+                    {...register("description")}
                     className="w-full"
                     rows={3}
                   />
                   <p className="text-sm text-red-500">
-                    {errors.address?.message}
+                    {errors.description?.message}
                   </p>
                 </div>
 
@@ -306,10 +269,6 @@ export default function CreateCustomer() {
                     )}
                   />
                 </div>
-
-                {/* The Radix Checkbox section for 'status' was removed here 
-                  as requested. 
-                */}
               </div>
 
               {/* Error Message */}

@@ -4,9 +4,9 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 import { DATA_API } from "@/config/constants";
-import CompanyTable from "./company-table";
+import CompanyTable from "./companyTable";
 import { Flex, Grid } from "@radix-ui/themes";
-import CreateCustomer from "./create-company";
+import CreateCustomer from "./createCompanie";
 
 export interface CompanyListProps {
   company_id: string;

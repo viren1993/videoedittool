@@ -11,7 +11,7 @@ interface CompanieDeleteProps {
   data?: Partial<Company>;
 }
 
-export default function CompanieDelete({ data }: CompanieDeleteProps) {
+export default function DeleteCompanie({ data }: CompanieDeleteProps) {
   const { data: session } = useSession();
 
   const handleDeleteConfirm = async () => {

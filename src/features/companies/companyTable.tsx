@@ -9,8 +9,8 @@ import {
   ICellRendererParams,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import CompanieDelete from "./companie-delete";
-import CompanieEdit from "./companie-edit";
+import DeleteCompanie from "./deleteCompanie";
+import EditCompanie from "./editCompanie";
 
 // Placeholder for the Company type if 'type.ts' is not provided
 type Company = {
@@ -27,8 +27,8 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 const ActionCellRenderer = (props: ICellRendererParams<Company>) => {
   return (
     <div style={{ display: "flex", gap: "8px", marginTop: "3px" }}>
-      {/* <CompanieEdit data={props?.data} /> */}
-      <CompanieDelete data={props?.data} />
+      <EditCompanie data={props?.data} />
+      <DeleteCompanie data={props?.data} />
     </div>
   );
   //
@@ -89,38 +89,21 @@ export default function CompanyTable({ data }: { data: Company[] }) {
 
   return (
     <div className="ag-theme-quartz" style={{ height: 550, width: "100%" }}>
-      {/* Search + CSV */}
       <div style={{ marginBottom: "10px" }}>
         <input
           type="text"
           placeholder="Search..."
           value={quickFilterText}
           onChange={(e) => setQuickFilterText(e.target.value)}
-          style={{
-            padding: "8px",
-            width: "250px",
-            border: "1px solid #ccc",
-            borderRadius: "4px",
-          }}
         />
 
         <button
           onClick={handleSlowCsvDownload}
-          style={{
-            marginLeft: "15px",
-            padding: "8px 12px",
-            background: "#1976d2",
-            color: "#fff",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
         >
           Download CSV (Slow)
         </button>
       </div>
 
-      {/* Grid with Pagination */}
       <AgGridReact
         rowData={rowData}
         columnDefs={colDefs}
