@@ -8,20 +8,20 @@ export function createMetadata(override: Metadata): Metadata {
       description: override.description ?? undefined,
       url: "https://designcombo.dev",
       images: "/banner.png",
-      siteName: "Combo",
-      ...override.openGraph
+      siteName: "Video Generator",
+      ...override.openGraph,
     },
     twitter: {
       card: "summary_large_image",
-      creator: "@Combo",
+      creator: "Video Generator",
       title: override.title ?? undefined,
       description: override.description ?? undefined,
       images: "/banner.png",
-      ...override.twitter
+      ...override.twitter,
     },
     icons: {
-      icon: "/icon.svg"
-    }
+      icon: "/icon.svg",
+    },
   };
 }
 

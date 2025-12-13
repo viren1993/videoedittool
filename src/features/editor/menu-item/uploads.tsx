@@ -64,8 +64,13 @@ const VideoThumbnail = ({ src }: { src: string }) => {
 };
 
 export const Uploads = () => {
-  const { setShowUploadModal, uploads, pendingUploads, activeUploads, setUploads } =
-    useUploadStore();
+  const {
+    setShowUploadModal,
+    uploads,
+    pendingUploads,
+    activeUploads,
+    setUploads,
+  } = useUploadStore();
 
   const videos = uploads.filter(
     (upload) => upload.type?.startsWith("video/") || upload.type === "video"
@@ -88,17 +93,17 @@ export const Uploads = () => {
       payload: {
         id: generateId(),
         details: {
-          src: srcVideo
+          src: srcVideo,
         },
         metadata: {
           previewUrl:
-            "https://cdn.designcombo.dev/caption_previews/static_preset1.webp"
-        }
+            "https://cdn.designcombo.dev/caption_previews/static_preset1.webp",
+        },
       },
       options: {
         resourceId: "main",
-        scaleMode: "fit"
-      }
+        scaleMode: "fit",
+      },
     });
   };
 
@@ -111,14 +116,14 @@ export const Uploads = () => {
         type: "image",
         display: {
           from: 0,
-          to: 5000
+          to: 5000,
         },
         details: {
-          src: srcImage
+          src: srcImage,
         },
-        metadata: {}
+        metadata: {},
       },
-      options: {}
+      options: {},
     });
   };
 
@@ -129,11 +134,11 @@ export const Uploads = () => {
         id: generateId(),
         type: "audio",
         details: {
-          src: srcAudio
+          src: srcAudio,
         },
-        metadata: {}
+        metadata: {},
       },
-      options: {}
+      options: {},
     });
   };
 
@@ -195,7 +200,9 @@ export const Uploads = () => {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <VideoIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Videos ({videos.length})</span>
+              <span className="font-medium text-sm">
+                Videos ({videos.length})
+              </span>
             </div>
             <ScrollArea className="max-h-48">
               <div className="grid grid-cols-3 gap-2 max-w-full">
@@ -208,7 +215,9 @@ export const Uploads = () => {
                       className="w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer hover:ring-2 hover:ring-primary"
                       onClick={() => handleAddVideo(video)}
                     >
-                      <VideoThumbnail src={video.metadata?.uploadedUrl || video.url} />
+                      <VideoThumbnail
+                        src={video.metadata?.uploadedUrl || video.url}
+                      />
                     </Card>
                     <button
                       className="absolute -top-1 -right-1 bg-red-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
