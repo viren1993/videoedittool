@@ -23,7 +23,7 @@ export async function processFileUpload(
     callbacks.onProgress(uploadId, 10);
 
     const objectUrl = URL.createObjectURL(file);
-
+    
     callbacks.onProgress(uploadId, 50);
 
     const contentType = file.type || "application/octet-stream";
@@ -43,7 +43,7 @@ export async function processFileUpload(
       status: "uploaded",
       isPreview: false,
       file: file,
-      url: objectUrl,
+      url: objectUrl
     };
 
     callbacks.onProgress(uploadId, 100);
@@ -65,7 +65,7 @@ export async function processUrlUpload(
 
     let contentType = "application/octet-stream";
     const urlLower = url.toLowerCase();
-
+    
     if (urlLower.match(/\.(mp4|webm|mov|avi|mkv)(\?|$)/i)) {
       contentType = "video/mp4";
     } else if (urlLower.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/i)) {
@@ -92,7 +92,7 @@ export async function processUrlUpload(
       origin: "user",
       status: "uploaded",
       isPreview: false,
-      url: url,
+      url: url
     };
 
     callbacks.onProgress(uploadId, 100);
