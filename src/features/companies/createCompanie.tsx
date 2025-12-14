@@ -4,22 +4,17 @@ import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useSession } from "next-auth/react";
-
-// Assuming these are your component imports
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { DATA_API } from "@/config/constants";
-
 import axios from "axios";
-// Radix UI Components
 import * as Label from "@radix-ui/react-label";
 import { toast } from "sonner";
 import { Dialog, Flex, Grid, Text, TextArea } from "@radix-ui/themes";
 import { Eye, EyeClosed, UserPlus } from "lucide-react"; // Removed Check icon
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Helper function to check file type
 const isImageFile = (file: File) => {
   return (
     file.type === "image/png" ||
@@ -28,7 +23,6 @@ const isImageFile = (file: File) => {
   );
 };
 
-// --- Zod Schema for Validation (STATUS REMOVED) ---
 const createCustomerSchema = z.object({
   company_name: z.string().min(1, { message: "Company name is required" }),
   username: z.string().min(1).max(20, "Username must be max 20 characters"),
@@ -55,7 +49,6 @@ const createCustomerSchema = z.object({
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 
-// --- Component ---
 export default function CreateCustomer() {
   const [isLoading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -82,7 +75,6 @@ export default function CreateCustomer() {
       formData.append("description", data.description || "");
       formData.append("status", "active");
 
-      // Handle file upload
       if (data.logo_file && data.logo_file.length > 0) {
         formData.append("logo_file", data.logo_file[0]);
       }
@@ -96,8 +88,8 @@ export default function CreateCustomer() {
 
       if (response.status === 200 || response.status === 201) {
         toast.success("Company created successfully!");
-        reset(); // Clear the form fields
-        setOpen(false); // Close the Radix Dialog
+        reset();
+        setOpen(false);
       }
     } catch (err: any) {
       const errorMessage =
@@ -115,7 +107,6 @@ export default function CreateCustomer() {
     }
   };
 
-  // --- Rendered Form (UPDATED: Removed Checkbox) ---
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger>
@@ -124,13 +115,11 @@ export default function CreateCustomer() {
           <span className="ml-2">Add Company</span>
         </Button>
       </Dialog.Trigger>
-
       <Dialog.Content maxWidth="600px">
         <Dialog.Title>Create Company</Dialog.Title>
         <Dialog.Description>
           Add a new company to your account.
         </Dialog.Description>
-
         <Form<CreateCustomerInput>
           onSubmit={onSubmit}
           validationSchema={createCustomerSchema}

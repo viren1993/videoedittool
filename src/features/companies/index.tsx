@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { DATA_API } from "@/config/constants";
 import CompanyTable from "./companyTable";
-import { Flex, Grid } from "@radix-ui/themes";
+import { Flex, Grid, Skeleton } from "@radix-ui/themes";
 import CreateCustomer from "./createCompanie";
 
 export interface CompanyListProps {
@@ -32,6 +32,7 @@ export default function Companies() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [companies, setCompanies] = useState(null as CompanyListProps[] | any);
+  console.log("companies", companies);
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -70,7 +71,11 @@ export default function Companies() {
         <h1>Companies List</h1>
         <CreateCustomer />
       </Flex>
-      {companies?.length > 0 && <CompanyTable data={companies} />}
+      {isLoading ? (
+        <Skeleton width="48px" height="48px" />
+      ) : (
+        <CompanyTable data={companies} />
+      )}
     </>
   );
 }

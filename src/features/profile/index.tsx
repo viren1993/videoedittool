@@ -1,6 +1,6 @@
 "use client";
 
-import { Heading, Text } from "@radix-ui/themes";
+import { Text } from "@radix-ui/themes";
 import { useSession } from "next-auth/react";
 
 export default function Profile() {
@@ -12,11 +12,10 @@ export default function Profile() {
   const profile = user.profile;
 
   return (
-    <div className="grid gap-4 divide-y divide-dashed divide-gray-200 rounded-lg border border-gray-200 p-3">
-      {/* SUPERADMIN VIEW */}
+    <div className="grid gap-4 divide-y divide-dashed divide-gray-300 rounded-lg border border-gray-400 p-3">
       {role === "superadmin" ? (
         <>
-          <div className="grid grid-cols-12 gap-4 pt-4">
+          <div className="grid grid-cols-12 gap-4 py-2">
             <div className="col-span-4">
               <Text className="font-lg mb-3 text-base capitalize">
                 User Name
@@ -29,7 +28,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="grid grid-cols-12 gap-4 pt-4">
+          <div className="grid grid-cols-12 gap-4 py-2">
             <div className="col-span-4">
               <Text className="font-lg mb-3 text-base capitalize">Email</Text>
             </div>
@@ -40,7 +39,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="grid grid-cols-12 gap-4 pt-4">
+          <div className="grid grid-cols-12 gap-4 py-2">
             <div className="col-span-4">
               <Text className="font-lg mb-3 text-base capitalize">Role</Text>
             </div>
@@ -54,7 +53,7 @@ export default function Profile() {
       ) : (
         <>
           {/* COMPANY VIEW */}
-          <div className="grid grid-cols-12 gap-4 pt-4">
+          <div className="grid grid-cols-12 gap-4 py-2">
             <div className="col-span-4">
               <Text className="font-lg mb-3 text-base capitalize">
                 Company Name
@@ -67,7 +66,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="grid grid-cols-12 gap-4 pt-4">
+          <div className="grid grid-cols-12 gap-4 py-2">
             <div className="col-span-4">
               <Text className="font-lg mb-3 text-base capitalize">
                 {" "}
@@ -81,7 +80,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="grid grid-cols-12 gap-4 pt-4">
+          <div className="grid grid-cols-12 gap-4 py-2">
             <div className="col-span-4">
               <Text className="font-lg mb-3 text-base capitalize"> Email</Text>
             </div>
@@ -92,7 +91,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="grid grid-cols-12 gap-4 pt-4">
+          <div className="grid grid-cols-12 gap-4 py-2">
             <div className="col-span-4">
               <Text className="font-lg mb-3 text-base capitalize"> Mobile</Text>
             </div>
@@ -103,7 +102,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="grid grid-cols-12 gap-4 pt-4">
+          <div className="grid grid-cols-12 gap-4 py-2">
             <div className="col-span-4">
               <Text className="font-lg mb-3 text-base capitalize"> Role</Text>
             </div>

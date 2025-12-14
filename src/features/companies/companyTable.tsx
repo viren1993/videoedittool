@@ -27,7 +27,6 @@ type Company = {
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-// --- Action Cell Renderer Component ---
 const ActionCellRenderer = (props: ICellRendererParams<Company>) => {
   const [open, setOpen] = useState(false);
 
@@ -47,10 +46,8 @@ const ActionCellRenderer = (props: ICellRendererParams<Company>) => {
   //
 };
 
-// --- Main CompanyTable Component ---
 export default function CompanyTable({ data }: { data: Company[] }) {
   const [rowData] = useState<Company[]>(data);
-
   const [colDefs] = useState<ColDef<Company>[]>([
     { headerName: "Company", field: "company_name", filter: true },
     { headerName: "Email", field: "email", filter: true },
@@ -71,11 +68,10 @@ export default function CompanyTable({ data }: { data: Company[] }) {
       resizable: false,
     },
   ]);
-
   const defaultColDef = { flex: 1, minWidth: 150 };
   const [quickFilterText, setQuickFilterText] = useState("");
-
   const [gridApi, setGridApi] = useState<GridApi<Company> | null>(null);
+  const theme = localStorage.getItem("theme");
 
   const onGridReady = (params: any) => {
     setGridApi(params.api as GridApi<Company>);
@@ -88,9 +84,7 @@ export default function CompanyTable({ data }: { data: Company[] }) {
 
   const handleSlowCsvDownload = () => {
     if (!gridApi) return;
-
     alert("Preparing CSV... This will take 3 seconds.");
-
     setTimeout(() => {
       gridApi.exportDataAsCsv();
     }, 3000);
@@ -110,7 +104,9 @@ export default function CompanyTable({ data }: { data: Company[] }) {
         </Button>
       </Flex>
       <div
-        className="ag-theme-alpine"
+        className={
+          theme === "dark" ? "ag-theme-alpine-dark" : "ag-theme-alpine"
+        }
         style={{ height: "440px", width: "100%" }}
       >
         <AgGridReact

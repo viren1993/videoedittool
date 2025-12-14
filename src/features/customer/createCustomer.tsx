@@ -4,22 +4,17 @@ import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useSession } from "next-auth/react";
-
-// Assuming these are your component imports
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { DATA_API } from "@/config/constants";
-
 import axios from "axios";
-// Radix UI Components
 import * as Label from "@radix-ui/react-label";
 import { toast } from "sonner";
 import { Dialog, Flex, Grid, Text, TextArea } from "@radix-ui/themes";
 import { Eye, EyeClosed, UserPlus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Helper function to check file type
 const isImageFile = (file: File) => {
   return (
     file.type === "image/png" ||
@@ -28,7 +23,6 @@ const isImageFile = (file: File) => {
   );
 };
 
-// --- Zod Schema for Validation (STATUS REMOVED) ---
 const createCustomerSchema = z.object({
   customer_company_name: z.string().min(1, "Customer company name is required"),
   full_name: z.string().min(1, "Full name is required"),
@@ -43,7 +37,6 @@ const createCustomerSchema = z.object({
     .string()
     .min(6, "Telephone number must be at least 6 digits")
     .max(15, "Telephone number must be max 15 digits"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
   city: z.string().min(1, "City is required"),
   address: z.string().min(1, "Address is required").max(250),
   logo_file: z
@@ -56,19 +49,24 @@ const createCustomerSchema = z.object({
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 
-// --- Component ---
 export default function CreateCustomer() {
   const [isLoading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { data: session } = useSession();
   const accessToken = session?.user?.access_token;
-  console.log(accessToken, "accessToken");
   const [open, setOpen] = useState(false);
-  const formMethods = useForm<CreateCustomerInput>({
+
+  // Initialize form with react-hook-form
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<CreateCustomerInput>({
     resolver: zodResolver(createCustomerSchema),
   });
-  const { reset } = formMethods;
 
   const onSubmit: SubmitHandler<CreateCustomerInput> = async (data) => {
     setLoading(true);
@@ -76,18 +74,19 @@ export default function CreateCustomer() {
 
     try {
       const formData = new FormData();
+
       formData.append("customer_company_name", data.customer_company_name);
       formData.append("full_name", data.full_name);
       formData.append("username", data.username);
       formData.append("email", data.email);
-      formData.append("password", data.password);
+      formData.append("password", "Abc@1234");
       formData.append("city", data.city);
       formData.append("phone_number", data.phone_number);
       formData.append("telephone_number", data.telephone_number);
       formData.append("address", data.address);
       formData.append("status", "active");
 
-      // Handle file upload
+      // Handle file upload properly
       if (data.logo_file && data.logo_file.length > 0) {
         formData.append("logo_file", data.logo_file[0]);
       }
@@ -101,23 +100,53 @@ export default function CreateCustomer() {
 
       if (response.status === 200 || response.status === 201) {
         toast.success("Customer created successfully!");
-        reset();
+        reset(); // Reset form
         setOpen(false);
       }
     } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.detail?.msg ||
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.response?.data?.detail ||
-        err.message ||
-        "Failed to create company";
+      console.error("Error creating customer:", err);
+
+      // Handle different error formats
+      let errorMessage = "Failed to create company";
+
+      if (err.response?.data?.detail?.msg) {
+        errorMessage = err.response.data.detail.msg;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.detail) {
+        // Handle if detail is a string or object
+        errorMessage =
+          typeof err.response.data.detail === "string"
+            ? err.response.data.detail
+            : JSON.stringify(err.response.data.detail);
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
 
       setErrorMsg(errorMessage);
       toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to safely render error messages
+  const renderErrorMessage = (error: any) => {
+    if (!error) return null;
+
+    if (typeof error === "string") {
+      return error;
+    }
+
+    if (error.message) {
+      return typeof error.message === "string"
+        ? error.message
+        : error.message.msg || JSON.stringify(error.message);
+    }
+
+    return JSON.stringify(error);
   };
 
   return (
@@ -131,201 +160,166 @@ export default function CreateCustomer() {
 
       <Dialog.Content maxWidth="600px">
         <Dialog.Title>Customer Create</Dialog.Title>
-        <Form<CreateCustomerInput>
-          onSubmit={onSubmit}
-          validationSchema={createCustomerSchema}
-          useFormProps={{
-            resolver: zodResolver(createCustomerSchema),
-          }}
+        <hr className="my-4" />
+
+        {/* Use react-hook-form's handleSubmit */}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
           className="grid grid-cols-1 gap-6 mt-4"
         >
-          {({ register, control, formState: { errors } }) => (
-            <>
-              <div className="grid gap-4">
-                {/* Customer Company Name */}
-                <div>
-                  <Label.Root className="mb-1 block font-medium">
-                    Customer Company Name
-                  </Label.Root>
-                  <Input {...register("customer_company_name")} />
-                  <p className="text-sm text-red-500">
-                    {errors.customer_company_name?.message}
-                  </p>
-                </div>
-
-                {/* Full Name */}
-                <div>
-                  <Label.Root className="mb-1 block font-medium">
-                    Full Name
-                  </Label.Root>
-                  <Input {...register("full_name")} />
-                  <p className="text-sm text-red-500">
-                    {errors.full_name?.message}
-                  </p>
-                </div>
-
-                <Flex gap="2">
-                  {/* Username */}
-                  <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
-                      Username
-                    </Label.Root>
-                    <Input {...register("username")} />
-                    <p className="text-sm text-red-500">
-                      {errors.username?.message}
-                    </p>
-                  </Grid>
-
-                  {/* Email */}
-                  <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
-                      Email
-                    </Label.Root>
-                    <Input {...register("email")} type="email" />
-                    <p className="text-sm text-red-500">
-                      {errors.email?.message}
-                    </p>
-                  </Grid>
-                </Flex>
-                <Flex gap="3">
-                  {/* Phone Number */}
-                  <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
-                      Phone Number
-                    </Label.Root>
-                    <Input
-                      placeholder="Enter 10 digit phone number"
-                      maxLength={10}
-                      {...register("phone_number")}
-                      onInput={(e) => {
-                        e.currentTarget.value = e.currentTarget.value.replace(
-                          /[^0-9]/g,
-                          ""
-                        );
+          <div className="grid gap-4">
+            <div>
+              <Label.Root className="mb-1 block font-normal">
+                Customer Company Name
+              </Label.Root>
+              <Input {...register("customer_company_name")} />
+              <p className="text-sm text-red-500">
+                {renderErrorMessage(errors.customer_company_name)}
+              </p>
+            </div>
+            <div>
+              <Label.Root className="mb-1 block font-normal">
+                Full Name
+              </Label.Root>
+              <Input {...register("full_name")} />
+              <p className="text-sm text-red-500">
+                {renderErrorMessage(errors.full_name)}
+              </p>
+            </div>
+            <Flex gap="2">
+              <Grid width={"100%"}>
+                <Label.Root className="mb-1 block font-normal">
+                  Username
+                </Label.Root>
+                <Input {...register("username")} />
+                <p className="text-sm text-red-500">
+                  {renderErrorMessage(errors.username)}
+                </p>
+              </Grid>
+              <Grid width={"100%"}>
+                <Label.Root className="mb-1 block font-normal">
+                  Email
+                </Label.Root>
+                <Input {...register("email")} type="email" />
+                <p className="text-sm text-red-500">
+                  {renderErrorMessage(errors.email)}
+                </p>
+              </Grid>
+            </Flex>
+            <Flex gap="3">
+              <Grid width={"100%"}>
+                <Label.Root className="mb-1 block font-normal">
+                  Phone Number
+                </Label.Root>
+                <Input
+                  placeholder="Enter 10 digit phone number"
+                  maxLength={10}
+                  {...register("phone_number")}
+                  onInput={(e) => {
+                    e.currentTarget.value = e.currentTarget.value.replace(
+                      /[^0-9]/g,
+                      ""
+                    );
+                  }}
+                />
+                <p className="text-sm text-red-500">
+                  {renderErrorMessage(errors.phone_number)}
+                </p>
+              </Grid>
+              <Grid width={"100%"}>
+                <Label.Root className="mb-1 block font-normal">
+                  Telephone Number
+                </Label.Root>
+                <Input
+                  {...register("telephone_number")}
+                  maxLength={15}
+                  onInput={(e) => {
+                    e.currentTarget.value = e.currentTarget.value.replace(
+                      /[^0-9]/g,
+                      ""
+                    );
+                  }}
+                />
+                <p className="text-sm text-red-500">
+                  {renderErrorMessage(errors.telephone_number)}
+                </p>
+              </Grid>
+            </Flex>
+            <div>
+              <Label.Root className="mb-1 block font-normal">City</Label.Root>
+              <Input {...register("city")} />
+              <p className="text-sm text-red-500">
+                {renderErrorMessage(errors.city)}
+              </p>
+            </div>
+            <div>
+              <Label.Root className="mb-1 block font-normal">
+                Address
+              </Label.Root>
+              <TextArea {...register("address")} className="w-full" rows={3} />
+              <p className="text-sm text-red-500">
+                {renderErrorMessage(errors.address)}
+              </p>
+            </div>
+            <div>
+              <Label.Root className="mb-1 block font-normal">
+                Upload Logo (PNG/JPG/JPEG)
+              </Label.Root>
+              <Controller
+                name="logo_file"
+                control={control}
+                render={({ field: { onChange, value, ...field } }) => (
+                  <div>
+                    <input
+                      type="file"
+                      accept=".png, .jpg, .jpeg, image/png, image/jpeg"
+                      className="block border p-2 rounded w-full"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        onChange(file ? e.target.files : null);
                       }}
+                      {...field}
                     />
-                    <p className="text-sm text-red-500">
-                      {errors.phone_number?.message}
-                    </p>
-                  </Grid>
-
-                  {/* Telephone Number */}
-                  <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
-                      Telephone Number
-                    </Label.Root>
-                    <Input {...register("telephone_number")} />
-                    <p className="text-sm text-red-500">
-                      {errors.telephone_number?.message}
-                    </p>
-                  </Grid>
-                </Flex>
-
-                {/* City */}
-                <div>
-                  <Label.Root className="mb-1 block font-medium">
-                    City
-                  </Label.Root>
-                  <Input {...register("city")} />
-                  <p className="text-sm text-red-500">{errors.city?.message}</p>
-                </div>
-
-                {/* Address (Textarea) */}
-                <div>
-                  <Label.Root className="mb-1 block font-medium">
-                    Address
-                  </Label.Root>
-                  <TextArea
-                    {...register("address")}
-                    className="w-full"
-                    rows={3}
-                  />
-                  <p className="text-sm text-red-500">
-                    {errors.address?.message}
-                  </p>
-                </div>
-
-                {/* Password + Toggle */}
-                <div>
-                  <Label.Root className="mb-1 block font-medium">
-                    Password
-                  </Label.Root>
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      {...register("password")}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-2.5"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                    >
-                      {showPassword ? (
-                        <EyeClosed className="w-4 h-4 text-gray-500" />
-                      ) : (
-                        <Eye className="w-4 h-4 text-gray-500" />
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-sm text-red-500">
-                    {errors.password?.message}
-                  </p>
-                </div>
-
-                {/* File Upload (Controlled) */}
-                <div>
-                  <Label.Root className="mb-1 block font-medium">
-                    Upload Logo (PNG/JPG/JPEG)
-                  </Label.Root>
-                  <Controller
-                    name="logo_file"
-                    control={control}
-                    render={({ field: { onChange, value } }) => (
-                      <div>
-                        <input
-                          type="file"
-                          // Use the accept attribute to suggest file types
-                          accept=".png, .jpg, .jpeg, image/png, image/jpeg"
-                          className="block border p-2 rounded"
-                          // Use onChange to capture the FileList and update the form state
-                          onChange={(e) => onChange(e.target.files)}
-                        />
-                        {/* Display the selected file name if a file is present */}
-                        {value?.length > 0 && (
-                          <Text className="text-green-600 text-sm mt-2">
-                            Selected: **{value[0].name}** (
-                            {(value[0].size / 1024).toFixed(2)} KB)
-                          </Text>
-                        )}
-                        {/* Ensure message is treated as a string */}
-                        <p className="text-sm text-red-500 mt-1">
-                          {errors.logo_file?.message?.toString()}
-                        </p>
-                      </div>
+                    {value && value.length > 0 && (
+                      <Text className="text-green-600 text-sm mt-2">
+                        Selected: {value[0].name} (
+                        {(value[0].size / 1024).toFixed(2)} KB)
+                      </Text>
                     )}
-                  />
-                </div>
-              </div>
+                    <p className="text-sm text-red-500 mt-1">
+                      {renderErrorMessage(errors.logo_file)}
+                    </p>
+                  </div>
+                )}
+              />
+            </div>
+          </div>
 
-              {/* Error Message */}
-              {errorMsg && (
-                <span className="text-sm text-red-500">{errorMsg}</span>
-              )}
-
-              {/* Footer Buttons */}
-              <div className="flex items-center justify-end gap-4">
-                <Dialog.Close>
-                  <Button type="button" variant="ghost" disabled={isLoading}>
-                    Cancel
-                  </Button>
-                </Dialog.Close>
-                <Button disabled={isLoading} type="submit">
-                  {isLoading ? "Saving..." : "Save"}
-                </Button>
-              </div>
-            </>
+          {errorMsg && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded">
+              <span className="text-sm text-red-600">{errorMsg}</span>
+            </div>
           )}
-        </Form>
+
+          <div className="flex items-center justify-end gap-4 mt-6">
+            <Dialog.Close>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={isLoading}
+                onClick={() => {
+                  reset();
+                  setOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </Dialog.Close>
+            <Button disabled={isLoading} type="submit">
+              {isLoading ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </form>
       </Dialog.Content>
     </Dialog.Root>
   );

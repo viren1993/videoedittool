@@ -14,6 +14,7 @@ import EditCustomer from "./editCustomer";
 import { CustomerPorps } from "./type";
 import { Button, Flex } from "@radix-ui/themes";
 import { Input } from "@/components/ui/input";
+import { Download } from "lucide-react";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -87,7 +88,15 @@ export default function CustomerTable({ data }: { data: CustomerPorps[] }) {
           value={quickFilterText}
           onChange={(e) => setQuickFilterText(e.target.value)}
         />
-        <Button onClick={handleSlowCsvDownload}>Download CSV (Slow)</Button>
+        <Button
+          size="2"
+          className="py-2 px-6 h-[36px]"
+          variant="solid"
+          onClick={handleSlowCsvDownload}
+        >
+          <Download />
+          Download CSV
+        </Button>
       </Flex>
       <div className="ag-theme-quartz" style={{ height: 440, width: "100%" }}>
         <AgGridReact

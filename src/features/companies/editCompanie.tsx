@@ -2,25 +2,22 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, SubmitHandler } from "react-hook-form";
 import {
   Button,
   Dialog,
   Flex,
   Grid,
-  IconButton,
   Text,
   TextArea,
+  Checkbox,
 } from "@radix-ui/themes";
-import { CheckIcon, SquarePen } from "lucide-react";
 import { Form } from "@/components/ui/form";
 import { DATA_API } from "@/config/constants";
 import { toast } from "sonner";
 import * as Label from "@radix-ui/react-label";
 import { Input } from "@/components/ui/input";
 import { z } from "zod";
-import * as Checkbox from "@radix-ui/react-checkbox";
 import axios from "axios";
 
 export interface GetCompany {
@@ -55,7 +52,6 @@ const isImageFile = (file: File) => {
   );
 };
 
-// --- Zod Schema for Validation (STATUS REMOVED) ---
 const createCustomerSchema = z.object({
   company_name: z.string().min(1, "Customer company name is required"),
   username: z.string().min(1).max(20, "Username must be max 20 characters"),
@@ -76,6 +72,7 @@ const createCustomerSchema = z.object({
       message: "Logo must be a PNG, JPG, or JPEG image.",
     })
     .optional(),
+  existing_logo_url: z.string().optional(), // Add this to handle existing logo
 });
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
@@ -85,16 +82,6 @@ export default function EditCompanie({ data, setOpen }: CompanieEditProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { data: session } = useSession();
   const accessToken = session?.user?.access_token;
-  console.log(accessToken, "accessToken");
-
-  const [isChecked, setIsChecked] = useState(false);
-  const handleCheckChange = (checked: any) => {
-    if (typeof checked === "boolean") {
-      setIsChecked(checked);
-    }
-  };
-
-  console.log(data, "data");
 
   const onSubmit: SubmitHandler<CreateCustomerInput> = async (
     formDataInput
@@ -111,40 +98,37 @@ export default function EditCompanie({ data, setOpen }: CompanieEditProps) {
       formData.append("status", formDataInput.status ? "active" : "inactive");
       formData.append("description", formDataInput.description || "");
 
-      // if (formDataInput.logo_file && formDataInput.logo_file.length > 0) {
-      //   formData.append("logo_file", formDataInput.logo_file[0]);
-      // }
+      if (formDataInput.logo_file && formDataInput.logo_file.length > 0) {
+        formData.append("logo_file", formDataInput.logo_file[0]);
+      } else if (!formDataInput.existing_logo_url) {
+        // If no existing logo and no new file, you might want to handle removal
+        formData.append("logo_file", ""); // Send empty to remove logo
+      }
 
       const companyId = data?.company_id;
       if (!companyId) {
         throw new Error("Company ID is missing for update.");
       }
 
-      const response = await fetch(`${DATA_API}/company/${companyId}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: formData,
-      });
-
-      // const response = await axios.patch(
-      //   `${DATA_API}/company/${companyId}`,
-      //   formData,
-      //   {
-      //     headers: {
-      //       Authorization: `Bearer ${accessToken}`,
-      //     },
-      //   }
-      // );
+      const response = await axios.patch(
+        `${DATA_API}/company/${companyId}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
       if (response.status === 200 || response.status === 201) {
         toast.success(<Text>Company updated successfully!</Text>);
         setOpen(false);
-        // CONSIDER: You might need to refresh the parent data list here!
       }
     } catch (error: any) {
-      setErrorMsg("Something went wrong, please try again.");
+      setErrorMsg(
+        error.response?.data?.message ||
+          "Something went wrong, please try again."
+      );
       toast.error("Network error occurred");
     } finally {
       setLoading(false);
@@ -166,138 +150,168 @@ export default function EditCompanie({ data, setOpen }: CompanieEditProps) {
             mobile: data?.mobile,
             description: data?.description,
             status: data?.status === "active",
-            logo_file: data?.logo_url,
+            existing_logo_url: data?.logo_url,
           },
         }}
         className="grid grid-cols-1 gap-6 mt-4"
       >
-        {({ register, control, formState: { errors } }) => (
-          <>
-            <div className="grid gap-4">
-              <div>
-                <Label.Root className="mb-1 block font-medium">
-                  Customer Company Name
-                </Label.Root>
-                <Input {...register("company_name")} />
-                <p className="text-sm text-red-500">
-                  {errors.company_name?.message}
-                </p>
-              </div>
-              <Grid width={"100%"}>
-                <Label.Root className="mb-1 block font-medium">
-                  Username
-                </Label.Root>
-                <Input {...register("username")} />
-                <p className="text-sm text-red-500">
-                  {errors.username?.message}
-                </p>
-              </Grid>
-              <Grid width={"100%"}>
-                <Label.Root className="mb-1 block font-medium">
-                  Email
-                </Label.Root>
-                <Input {...register("email")} type="email" />
-                <p className="text-sm text-red-500">{errors.email?.message}</p>
-              </Grid>
-              <Grid width={"100%"}>
-                <Label.Root className="mb-1 block font-medium">
-                  Phone Number
-                </Label.Root>
-                <Input
-                  placeholder="Enter 10 digit phone number"
-                  maxLength={10}
-                  {...register("mobile")}
-                  onInput={(e) => {
-                    e.currentTarget.value = e.currentTarget.value.replace(
-                      /[^0-9]/g,
-                      ""
-                    );
-                  }}
-                />
-                <p className="text-sm text-red-500">{errors.mobile?.message}</p>
-              </Grid>
-              <div>
-                <Label.Root className="mb-1 block font-medium">
-                  Description
-                </Label.Root>
-                <TextArea
-                  {...register("description")}
-                  className="w-full"
-                  rows={3}
-                />
-                <p className="text-sm text-red-500">
-                  {errors.description?.message}
-                </p>
-              </div>
-              {/* <div>
-                <Label.Root className="mb-1 block font-medium">
-                  Upload Logo (PNG/JPG/JPEG)
-                </Label.Root>
-                <Controller
-                  name="logo_file"
-                  control={control}
-                  render={({ field: { onChange, value } }) => (
-                    <div>
-                      <input
-                        type="file"
-                        accept=".png, .jpg, .jpeg, image/png, image/jpeg"
-                        className="block border p-2 rounded"
-                        onChange={(e) => onChange(e.target.files)}
-                      />
-                      {value?.length > 0 && (
-                        <Text className="text-green-600 text-sm mt-2">
-                          Selected: **{value[0].name}** (
-                          {(value[0].size / 1024).toFixed(2)} KB)
-                        </Text>
-                      )}
-                      <p className="text-sm text-red-500 mt-1">
-                        {errors.logo_file?.message?.toString()}
-                      </p>
+        {({ register, control, formState: { errors }, watch }) => {
+          const existingLogoUrl = watch("existing_logo_url");
+          const logoFile = watch("logo_file");
+
+          return (
+            <>
+              <div className="grid gap-4">
+                <div>
+                  <Label.Root className="mb-1 block font-medium">
+                    Customer Company Name
+                  </Label.Root>
+                  <Input {...register("company_name")} />
+                  <p className="text-sm text-red-500">
+                    {errors.company_name?.message}
+                  </p>
+                </div>
+                <Grid width={"100%"}>
+                  <Label.Root className="mb-1 block font-medium">
+                    Username
+                  </Label.Root>
+                  <Input {...register("username")} />
+                  <p className="text-sm text-red-500">
+                    {errors.username?.message}
+                  </p>
+                </Grid>
+                <Grid width={"100%"}>
+                  <Label.Root className="mb-1 block font-medium">
+                    Email
+                  </Label.Root>
+                  <Input {...register("email")} type="email" />
+                  <p className="text-sm text-red-500">
+                    {errors.email?.message}
+                  </p>
+                </Grid>
+                <Grid width={"100%"}>
+                  <Label.Root className="mb-1 block font-medium">
+                    Phone Number
+                  </Label.Root>
+                  <Input
+                    placeholder="Enter 10 digit phone number"
+                    maxLength={10}
+                    {...register("mobile")}
+                    onInput={(e) => {
+                      e.currentTarget.value = e.currentTarget.value.replace(
+                        /[^0-9]/g,
+                        ""
+                      );
+                    }}
+                  />
+                  <p className="text-sm text-red-500">
+                    {errors.mobile?.message}
+                  </p>
+                </Grid>
+                <div>
+                  <Label.Root className="mb-1 block font-medium">
+                    Description
+                  </Label.Root>
+                  <TextArea
+                    {...register("description")}
+                    className="w-full"
+                    rows={3}
+                  />
+                  <p className="text-sm text-red-500">
+                    {errors.description?.message}
+                  </p>
+                </div>
+                <div>
+                  <Label.Root className="mb-1 block font-medium">
+                    Upload Logo (PNG/JPG/JPEG)
+                  </Label.Root>
+                  {existingLogoUrl && !logoFile?.length && (
+                    <div className="mb-3">
+                      <div className="flex items-center gap-3 mb-2">
+                        <img
+                          src={`${DATA_API}/media/${existingLogoUrl}`}
+                          alt="Current Company Logo"
+                          className="object-cover h-[100px] rounded border"
+                        />
+                      </div>
                     </div>
                   )}
+                  {logoFile?.length > 0 && (
+                    <div className="mb-3">
+                      <Text size="2" color="gray" className="mb-1 block">
+                        New logo preview:
+                      </Text>
+                      <img
+                        src={URL.createObjectURL(logoFile[0])}
+                        alt="New logo preview"
+                        className="h-16 w-16 object-cover rounded border"
+                      />
+                    </div>
+                  )}
+                  <Controller
+                    name="logo_file"
+                    control={control}
+                    render={({ field: { onChange, value } }) => (
+                      <div>
+                        <input
+                          type="file"
+                          accept=".png,.jpg,.jpeg"
+                          className="block border p-2 rounded w-full"
+                          onChange={(e) => onChange(e.target.files)}
+                        />
+                        <p className="text-sm text-red-500 mt-1">
+                          {errors.logo_file?.message?.toString()}
+                        </p>
+                        {value?.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="soft"
+                            size="1"
+                            onClick={() => onChange(null)}
+                            className="mt-2"
+                          >
+                            Clear selected file
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  />
+                </div>
+                <Controller
+                  name="status"
+                  control={control}
+                  render={({ field: { onChange, value, ref } }) => (
+                    <Text as="label" size="2">
+                      <Flex gap="2">
+                        <Checkbox
+                          checked={value}
+                          onCheckedChange={(checked) => {
+                            onChange(checked === true);
+                          }}
+                          ref={ref}
+                        />
+                        Status
+                      </Flex>
+                    </Text>
+                  )}
                 />
-              </div> */}
-              <Controller
-                name="status"
-                control={control}
-                render={({ field }) => (
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <Checkbox.Root
-                      className="CheckboxRoot"
-                      checked={Boolean(field.value)}
-                      onCheckedChange={(val) => field.onChange(Boolean(val))}
-                      id="terms"
-                    >
-                      <Checkbox.Indicator className="CheckboxIndicator">
-                        <CheckIcon />
-                      </Checkbox.Indicator>
-                    </Checkbox.Root>
-                    <label
-                      className="Label"
-                      htmlFor="terms"
-                      style={{ paddingLeft: 10 }}
-                    >
-                      Status
-                    </label>
-                  </div>
-                )}
-              />
-            </div>
-            {errorMsg && (
-              <span className="text-sm text-red-500">{errorMsg}</span>
-            )}
-            <div className="flex items-center justify-end gap-4">
-              <Dialog.Close>
-                <Button type="button" variant="ghost" disabled={isLoading}>
-                  Cancel
+              </div>
+              {errorMsg && (
+                <span className="text-sm text-red-500">{errorMsg}</span>
+              )}
+              <div className="flex items-center justify-end gap-4">
+                <Dialog.Close>
+                  <Button type="button" variant="ghost" disabled={isLoading}>
+                    Cancel
+                  </Button>
+                </Dialog.Close>
+                <Button disabled={isLoading} type="submit">
+                  {isLoading ? "Saving..." : "Save"}
                 </Button>
-              </Dialog.Close>
-              <Button disabled={isLoading} type="submit">
-                {isLoading ? "Saving..." : "Save"}
-              </Button>
-            </div>
-          </>
-        )}
+              </div>
+            </>
+          );
+        }}
       </Form>
     </Dialog.Content>
   );

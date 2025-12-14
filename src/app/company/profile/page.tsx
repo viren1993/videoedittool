@@ -2,21 +2,21 @@ import PageHeader from "@/components/page-header";
 import { metaObject } from "@/config/site.config";
 import PasswordReset from "@/features/passwordReset";
 import Profile from "@/features/profile";
-import { Flex, Grid, Reset } from "@radix-ui/themes";
+import { Flex, Grid } from "@radix-ui/themes";
 
 export const metadata = {
   ...metaObject("Organization profile page"),
 };
 
 const pageHeader = {
-  title: "Organization Profile",
+  title: "Company Profile",
   breadcrumb: [
     {
-      href: "/organization",
+      href: "/company",
       name: "Home",
     },
     {
-      name: "Organization Profile",
+      name: "Company Profile",
     },
   ],
 };

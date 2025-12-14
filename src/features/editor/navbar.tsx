@@ -125,6 +125,7 @@ export default function Navbar({
       </div>
       <div className="flex h-11 items-center justify-end gap-2">
         <div className=" pointer-events-auto flex h-10 items-center gap-2 rounded-md px-2.5">
+          <ResizeVideo />
           <DownloadPopover stateManager={stateManager} />
         </div>
       </div>

@@ -1,27 +1,28 @@
+import { Flex, Grid } from "@radix-ui/themes";
 import PageHeader from "@/components/page-header";
 import { metaObject } from "@/config/site.config";
-import PasswordReset from "@/features/passwordReset";
-import Profile from "@/features/profile";
-import { Flex, Grid, Reset } from "@radix-ui/themes";
+import Customer from "@/features/customer";
+import CreateCustomer from "@/features/customer/createCustomer";
+import Templates from "@/features/templates";
 
 export const metadata = {
-  ...metaObject("Organization profile page"),
+  ...metaObject("Customer List"),
 };
 
 const pageHeader = {
-  title: "Organization Profile",
+  title: "Templates List",
   breadcrumb: [
     {
-      href: "/organization",
+      href: "/company",
       name: "Home",
     },
     {
-      name: "Organization Profile",
+      name: "Customer List",
     },
   ],
 };
 
-export default function ProfilePage() {
+export default function TemplatesPage() {
   return (
     <Grid className="@container">
       <Flex justify={"between"} align={"start"}>
@@ -30,9 +31,8 @@ export default function ProfilePage() {
           title={pageHeader.title}
           breadcrumb={pageHeader.breadcrumb}
         />
-        <PasswordReset />
       </Flex>
-      <Profile />
+      <Templates />
     </Grid>
   );
 }
