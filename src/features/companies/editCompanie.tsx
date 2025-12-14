@@ -42,6 +42,7 @@ interface CompanieEditProps {
   data?: Partial<GetCompany>;
   open: boolean;
   setOpen: (open: boolean) => void;
+  setRefreshApi: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const isImageFile = (file: File) => {
@@ -77,7 +78,11 @@ const createCustomerSchema = z.object({
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 
-export default function EditCompanie({ data, setOpen }: CompanieEditProps) {
+export default function EditCompanie({
+  data,
+  setOpen,
+  setRefreshApi,
+}: CompanieEditProps) {
   const [isLoading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { data: session } = useSession();
@@ -123,6 +128,7 @@ export default function EditCompanie({ data, setOpen }: CompanieEditProps) {
       if (response.status === 200 || response.status === 201) {
         toast.success(<Text>Company updated successfully!</Text>);
         setOpen(false);
+        setRefreshApi((prev) => !prev);
       }
     } catch (error: any) {
       setErrorMsg(

@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SquarePen } from "lucide-react";
 
-// Placeholder for the Company type if 'type.ts' is not provided
 type Company = {
   company_name: string;
   email: string;
@@ -27,7 +26,11 @@ type Company = {
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const ActionCellRenderer = (props: ICellRendererParams<Company>) => {
+interface ActionCellRendererProps extends ICellRendererParams<Company> {
+  setRefreshApi: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const ActionCellRenderer = (props: ActionCellRendererProps) => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -38,15 +41,28 @@ const ActionCellRenderer = (props: ICellRendererParams<Company>) => {
             <SquarePen width="18" height="18" />
           </IconButton>
         </Dialog.Trigger>
-        <EditCompanie data={props?.data} open={open} setOpen={setOpen} />
+        <EditCompanie
+          data={props?.data}
+          open={open}
+          setOpen={setOpen}
+          setRefreshApi={props.setRefreshApi}
+        />
       </Dialog.Root>
-      <DeleteCompanie data={props?.data} />
+      <DeleteCompanie data={props?.data} setRefreshApi={props.setRefreshApi} />
     </div>
   );
   //
 };
 
-export default function CompanyTable({ data }: { data: Company[] }) {
+interface CompanyTableProps {
+  data: Company[];
+  setRefreshApi: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export default function CompanyTable({
+  data,
+  setRefreshApi,
+}: CompanyTableProps) {
   const [rowData] = useState<Company[]>(data);
   const [colDefs] = useState<ColDef<Company>[]>([
     { headerName: "Company", field: "company_name", filter: true },

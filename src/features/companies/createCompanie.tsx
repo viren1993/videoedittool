@@ -49,7 +49,11 @@ const createCustomerSchema = z.object({
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 
-export default function CreateCustomer() {
+export default function CreateCustomer({
+  setRefreshApi,
+}: {
+  setRefreshApi: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
   const [isLoading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -90,6 +94,7 @@ export default function CreateCustomer() {
         toast.success("Company created successfully!");
         reset();
         setOpen(false);
+        setRefreshApi(true);
       }
     } catch (err: any) {
       const errorMessage =

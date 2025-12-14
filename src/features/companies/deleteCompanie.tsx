@@ -9,9 +9,13 @@ import { toast } from "sonner";
 
 interface CompanieDeleteProps {
   data?: Partial<Company>;
+  setRefreshApi: (open: boolean) => void;
 }
 
-export default function DeleteCompanie({ data }: CompanieDeleteProps) {
+export default function DeleteCompanie({
+  data,
+  setRefreshApi,
+}: CompanieDeleteProps) {
   const { data: session } = useSession();
 
   const handleDeleteConfirm = async () => {
@@ -29,13 +33,14 @@ export default function DeleteCompanie({ data }: CompanieDeleteProps) {
         toast.success(
           <Text className="bold">Company deleted successfully</Text>
         );
+        setRefreshApi(true);
       }
     } catch (error) {
       console.error(error);
     }
   };
 
-  if (!data) return null; // No UI if no data
+  if (!data) return null;
 
   return (
     <AlertDialog.Root>
@@ -44,15 +49,12 @@ export default function DeleteCompanie({ data }: CompanieDeleteProps) {
           <Trash2 width="18" height="18" />
         </IconButton>
       </AlertDialog.Trigger>
-
       <AlertDialog.Content maxWidth="450px">
         <AlertDialog.Title>Delete Company</AlertDialog.Title>
-
         <AlertDialog.Description size="2">
           Are you sure you want to delete the company:
           <b> {data.company_name}</b>? This action cannot be undone.
         </AlertDialog.Description>
-
         <Flex gap="3" mt="4" justify="end">
           <AlertDialog.Cancel>
             <Button variant="soft" color="gray">
