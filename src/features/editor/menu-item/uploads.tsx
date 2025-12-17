@@ -8,7 +8,7 @@ import {
   Video as VideoIcon,
   Loader2,
   UploadIcon,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import { generateId } from "@designcombo/timeline";
 import { Button } from "@/components/ui/button";
@@ -64,8 +64,13 @@ const VideoThumbnail = ({ src }: { src: string }) => {
 };
 
 export const Uploads = () => {
-  const { setShowUploadModal, uploads, pendingUploads, activeUploads, setUploads } =
-    useUploadStore();
+  const {
+    setShowUploadModal,
+    uploads,
+    pendingUploads,
+    activeUploads,
+    setUploads,
+  } = useUploadStore();
 
   const videos = uploads.filter(
     (upload) => upload.type?.startsWith("video/") || upload.type === "video"
@@ -195,7 +200,9 @@ export const Uploads = () => {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <VideoIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Videos ({videos.length})</span>
+              <span className="font-medium text-sm">
+                Videos ({videos.length})
+              </span>
             </div>
             <ScrollArea className="max-h-48">
               <div className="grid grid-cols-3 gap-2 max-w-full">
@@ -208,7 +215,9 @@ export const Uploads = () => {
                       className="w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer hover:ring-2 hover:ring-primary"
                       onClick={() => handleAddVideo(video)}
                     >
-                      <VideoThumbnail src={video.metadata?.uploadedUrl || video.url} />
+                      <VideoThumbnail
+                        src={video.metadata?.uploadedUrl || video.url}
+                      />
                     </Card>
                     <button
                       className="absolute -top-1 -right-1 bg-red-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -233,7 +242,9 @@ export const Uploads = () => {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <ImageIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Images ({images.length})</span>
+              <span className="font-medium text-sm">
+                Images ({images.length})
+              </span>
             </div>
             <ScrollArea className="max-h-48">
               <div className="grid grid-cols-3 gap-2 max-w-full">
@@ -285,7 +296,9 @@ export const Uploads = () => {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Music className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Audios ({audios.length})</span>
+              <span className="font-medium text-sm">
+                Audios ({audios.length})
+              </span>
             </div>
             <ScrollArea className="max-h-48">
               <div className="grid grid-cols-3 gap-2 max-w-full">
@@ -319,13 +332,15 @@ export const Uploads = () => {
           </div>
         )}
 
-        {uploads.length === 0 && pendingUploads.length === 0 && activeUploads.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-            <UploadIcon className="w-12 h-12 mb-2 opacity-50" />
-            <p className="text-sm">No uploads yet</p>
-            <p className="text-xs">Click the button above to add files</p>
-          </div>
-        )}
+        {uploads.length === 0 &&
+          pendingUploads.length === 0 &&
+          activeUploads.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <UploadIcon className="w-12 h-12 mb-2 opacity-50" />
+              <p className="text-sm">No uploads yet</p>
+              <p className="text-xs">Click the button above to add files</p>
+            </div>
+          )}
       </div>
     </div>
   );

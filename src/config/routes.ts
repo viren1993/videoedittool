@@ -16,6 +16,7 @@ export const routes = {
     profile: "company/profile",
     media: "company/media",
     templates: "company/templates",
+    templatesCreate: "company/templates/create",
     customer: "company/customer",
     upload: "company/customer/upload",
     edit: "edit",

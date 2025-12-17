@@ -2,13 +2,13 @@
 
 import { AlertDialog, Button, Flex, IconButton, Text } from "@radix-ui/themes";
 import { Trash2 } from "lucide-react";
-import { Company } from "./type";
+import { ICustomer } from "./type";
 import { DATA_API } from "@/config/constants";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
 interface CompanieDeleteProps {
-  data?: Partial<Company>;
+  data?: Partial<ICustomer>;
 }
 
 export default function CompanieDelete({ data }: CompanieDeleteProps) {
@@ -17,7 +17,7 @@ export default function CompanieDelete({ data }: CompanieDeleteProps) {
   const handleDeleteConfirm = async () => {
     if (!data) return; // Prevent crashing
     try {
-      const res = await fetch(`${DATA_API}/company/${data.company_id}/`, {
+      const res = await fetch(`${DATA_API}/customer/${data?.id}/`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -27,7 +27,7 @@ export default function CompanieDelete({ data }: CompanieDeleteProps) {
 
       if (res.status === 200) {
         toast.success(
-          <Text className="bold">Company deleted successfully</Text>
+          <Text className="bold">Customer deleted successfully</Text>
         );
       }
     } catch (error) {
@@ -50,7 +50,7 @@ export default function CompanieDelete({ data }: CompanieDeleteProps) {
 
         <AlertDialog.Description size="2">
           Are you sure you want to delete the company:
-          <b> {data.company_name}</b>? This action cannot be undone.
+          <b> {data.customer_company_name}</b>? This action cannot be undone.
         </AlertDialog.Description>
 
         <Flex gap="3" mt="4" justify="end">

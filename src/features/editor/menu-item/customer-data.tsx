@@ -1,13 +1,29 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "@/components/ui/switch";
 import { dispatch } from "@designcombo/events";
 import { ADD_TEXT, ADD_ITEMS } from "@designcombo/state";
 import { generateId } from "@designcombo/timeline";
 import { nanoid } from "nanoid";
-import { Image, Type, Building2, User, Phone, MapPin, Mail, AlertCircle, Lock, LockOpen, type LucideIcon } from "lucide-react";
+import {
+  Image,
+  Type,
+  Building2,
+  User,
+  Phone,
+  MapPin,
+  Mail,
+  AlertCircle,
+  Lock,
+  LockOpen,
+  type LucideIcon,
+} from "lucide-react";
 import { useMemo, useState } from "react";
-import { useCustomerDataStore, type CustomerData as CustomerDataType } from "../store/use-customer-data-store";
+import {
+  useCustomerDataStore,
+  type CustomerData as CustomerDataType,
+} from "../store/use-customer-data-store";
 import {
   Tooltip,
   TooltipContent,
@@ -24,9 +40,11 @@ interface CustomerField {
   path: string;
 }
 
-const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] => {
+const generateCustomerFields = (
+  data: CustomerDataType | null
+): CustomerField[] => {
   if (!data) return [];
-  
+
   const fields: CustomerField[] = [];
 
   if (data.customer_company_name) {
@@ -36,7 +54,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.customer_company_name,
       type: "text",
       icon: Building2,
-      path: "customer_company_name"
+      path: "customer_company_name",
     });
   }
 
@@ -47,7 +65,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.full_name,
       type: "text",
       icon: User,
-      path: "full_name"
+      path: "full_name",
     });
   }
 
@@ -58,7 +76,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.logo_url,
       type: "image",
       icon: Image,
-      path: "logo_url"
+      path: "logo_url",
     });
   }
 
@@ -69,7 +87,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.city,
       type: "text",
       icon: MapPin,
-      path: "city"
+      path: "city",
     });
   }
 
@@ -80,7 +98,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.phone_number,
       type: "text",
       icon: Phone,
-      path: "phone_number"
+      path: "phone_number",
     });
   }
 
@@ -91,18 +109,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.address,
       type: "text",
       icon: MapPin,
-      path: "address"
-    });
-  }
-
-  if (data.user?.username) {
-    fields.push({
-      key: "user.username",
-      label: "Username",
-      value: data.user.username,
-      type: "text",
-      icon: User,
-      path: "user.username"
+      path: "address",
     });
   }
 
@@ -113,7 +120,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.user.email,
       type: "text",
       icon: Mail,
-      path: "user.email"
+      path: "user.email",
     });
   }
 
@@ -124,7 +131,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.company.company_name,
       type: "text",
       icon: Building2,
-      path: "company.company_name"
+      path: "company.company_name",
     });
   }
 
@@ -135,7 +142,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.company.logo_url,
       type: "image",
       icon: Image,
-      path: "company.logo_url"
+      path: "company.logo_url",
     });
   }
 
@@ -146,7 +153,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.company.description,
       type: "text",
       icon: Type,
-      path: "company.description"
+      path: "company.description",
     });
   }
 
@@ -157,7 +164,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.company.mobile,
       type: "text",
       icon: Phone,
-      path: "company.mobile"
+      path: "company.mobile",
     });
   }
 
@@ -168,7 +175,7 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
       value: data.company.email,
       type: "text",
       icon: Mail,
-      path: "company.email"
+      path: "company.email",
     });
   }
 
@@ -177,15 +184,20 @@ const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] 
 
 export const CustomerData = () => {
   const customerData = useCustomerDataStore((state) => state.customerData);
-  const setCustomerData = useCustomerDataStore((state) => state.setCustomerData);
+  const setCustomerData = useCustomerDataStore(
+    (state) => state.setCustomerData
+  );
   const [lockedFields, setLockedFields] = useState<Record<string, boolean>>({});
 
-  const customerFields = useMemo(() => generateCustomerFields(customerData), [customerData]);
+  const customerFields = useMemo(
+    () => generateCustomerFields(customerData),
+    [customerData]
+  );
 
   const toggleLock = (fieldKey: string) => {
-    setLockedFields(prev => ({
+    setLockedFields((prev) => ({
       ...prev,
-      [fieldKey]: !prev[fieldKey]
+      [fieldKey]: !prev[fieldKey],
     }));
   };
 
@@ -208,9 +220,9 @@ export const CustomerData = () => {
           fieldPath: field.path,
           fieldLabel: field.label,
           isLocked,
-        }
+        },
       },
-      options: {}
+      options: {},
     });
   };
 
@@ -226,7 +238,7 @@ export const CustomerData = () => {
             name: field.label,
             display: {
               from: 0,
-              to: 5000
+              to: 5000,
             },
             details: {
               src: `{{${field.path}}}`,
@@ -236,10 +248,10 @@ export const CustomerData = () => {
               fieldPath: field.path,
               fieldLabel: field.label,
               isLocked,
-            }
-          }
-        ]
-      }
+            },
+          },
+        ],
+      },
     });
   };
 
@@ -251,14 +263,15 @@ export const CustomerData = () => {
       city: "Gujrati",
       phone_number: "1234657890",
       telephone_number: "1234567890",
-      address: "1st Floor Shivanjali Society, Dr Ambedkar Road, Off Carter Rd, near Ambedkar Statue, Khar West, Mumbai, Maharashtra 400052, India",
+      address:
+        "1st Floor Shivanjali Society, Dr Ambedkar Road, Off Carter Rd, near Ambedkar Statue, Khar West, Mumbai, Maharashtra 400052, India",
       user: {
-        username: "navneet007",
         email: "navneet007@gmail.com",
       },
       company: {
         company_name: "TechVision Pvt LLP",
-        description: "We specialize in smart construction automation and site management systems.",
+        description:
+          "We specialize in smart construction automation and site management systems.",
         mobile: "+91-1234567890",
         logo_url: "logo.jpg",
         email: "info@telecom.com",
@@ -266,8 +279,8 @@ export const CustomerData = () => {
     });
   };
 
-  const textFields = customerFields.filter(f => f.type === "text");
-  const imageFields = customerFields.filter(f => f.type === "image");
+  const textFields = customerFields.filter((f) => f.type === "text");
+  const imageFields = customerFields.filter((f) => f.type === "image");
 
   if (!customerData) {
     return (
@@ -278,7 +291,8 @@ export const CustomerData = () => {
         <div className="flex flex-col items-center justify-center p-6 text-center">
           <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-sm text-muted-foreground mb-4">
-            No customer data loaded. Load customer data to insert dynamic fields into your template.
+            No customer data loaded. Load customer data to insert dynamic fields
+            into your template.
           </p>
           <Button onClick={handleLoadSampleData} variant="outline">
             Load Sample Data
@@ -313,10 +327,9 @@ export const CustomerData = () => {
                     <div className="flex flex-col items-start flex-1">
                       <span className="text-sm flex items-center gap-1">
                         {field.label}
-                        {isLocked && <Lock className="h-3 w-3 text-orange-500" />}
-                      </span>
-                      <span className="text-xs text-muted-foreground truncate max-w-[150px]">
-                        {field.value}
+                        {isLocked && (
+                          <Lock className="h-3 w-3 text-orange-500" />
+                        )}
                       </span>
                     </div>
                   </Button>
@@ -332,11 +345,19 @@ export const CustomerData = () => {
                             toggleLock(field.key);
                           }}
                         >
-                          {isLocked ? <Lock className="h-4 w-4 text-orange-500" /> : <LockOpen className="h-4 w-4" />}
+                          {isLocked ? (
+                            <Lock className="h-4 w-4 text-orange-500" />
+                          ) : (
+                            <LockOpen className="h-4 w-4" />
+                          )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{isLocked ? "Unlock: Customer can edit" : "Lock: Customer cannot edit"}</p>
+                        <p>
+                          {isLocked
+                            ? "Unlock: Customer can edit"
+                            : "Lock: Customer cannot edit"}
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -363,7 +384,9 @@ export const CustomerData = () => {
                     <div className="flex flex-col items-start flex-1">
                       <span className="text-sm flex items-center gap-1">
                         {field.label}
-                        {isLocked && <Lock className="h-3 w-3 text-orange-500" />}
+                        {isLocked && (
+                          <Lock className="h-3 w-3 text-orange-500" />
+                        )}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         Click to insert
@@ -382,11 +405,19 @@ export const CustomerData = () => {
                             toggleLock(field.key);
                           }}
                         >
-                          {isLocked ? <Lock className="h-4 w-4 text-orange-500" /> : <LockOpen className="h-4 w-4" />}
+                          {isLocked ? (
+                            <Lock className="h-4 w-4 text-orange-500" />
+                          ) : (
+                            <LockOpen className="h-4 w-4" />
+                          )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{isLocked ? "Unlock: Customer can edit" : "Lock: Customer cannot edit"}</p>
+                        <p>
+                          {isLocked
+                            ? "Unlock: Customer can edit"
+                            : "Lock: Customer cannot edit"}
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

@@ -212,6 +212,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
@@ -236,6 +237,7 @@
     column-gap: 1.5em;
     column-count: 1;
   }
+
   .masonry-sm {
     gap: 0.5rem;
     column-width: 160px;
@@ -394,9 +396,11 @@ input[type="number"]::-webkit-outer-spin-button {
 .ScrollAreaScrollbar:hover {
   background: var(--zinc-800);
 }
+
 .ScrollAreaScrollbar[data-orientation="vertical"] {
   width: 10px;
 }
+
 .ScrollAreaScrollbar[data-orientation="horizontal"] {
   flex-direction: column;
   height: 10px;
@@ -408,6 +412,7 @@ input[type="number"]::-webkit-outer-spin-button {
   border-radius: 10px;
   position: relative;
 }
+
 /* increase target size for touch devices https://www.w3.org/WAI/WCAG21/Understanding/target-size.html */
 .ScrollAreaThumb::before {
   content: "";
@@ -470,7 +475,7 @@ input[type="number"]::-webkit-outer-spin-button {
   padding: 0.25rem;
 }
 
-.handles > div {
+.handles>div {
   position: absolute;
   width: 1.5rem;
   height: 1.5rem;
@@ -490,6 +495,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .handle-n {
   border-top: 3px solid;
 }
+
 /* nw w sw */
 .handle-nw,
 .handle-w,
@@ -497,6 +503,7 @@ input[type="number"]::-webkit-outer-spin-button {
   left: -3px;
   border-left: 3px solid;
 }
+
 .handle-nw {
   border-top: 3px solid;
 }
@@ -512,6 +519,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .handle-ne {
   border-top: 3px solid;
 }
+
 .handle-se {
   border-bottom: 3px solid;
 }
@@ -529,6 +537,7 @@ input[type="number"]::-webkit-outer-spin-button {
   bottom: -3px;
   border-bottom: 3px solid;
 }
+
 .handle-sw {
   border-left: 3px solid;
 }
@@ -545,6 +554,6 @@ input[type="number"]::-webkit-outer-spin-button {
   transform: translate(0, -50%);
 }
 
-[data-slot="scroll-area-viewport"] > * {
+[data-slot="scroll-area-viewport"]>* {
   display: block !important;
 }

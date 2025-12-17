@@ -4,22 +4,17 @@ import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useSession } from "next-auth/react";
-
-// Assuming these are your component imports
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { DATA_API } from "@/config/constants";
-
 import axios from "axios";
-// Radix UI Components
 import * as Label from "@radix-ui/react-label";
 import { toast } from "sonner";
 import { Dialog, Flex, Grid, Text, TextArea } from "@radix-ui/themes";
-import { Eye, EyeClosed, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Helper function to check file type
 const isImageFile = (file: File) => {
   return (
     file.type === "image/png" ||
@@ -28,7 +23,6 @@ const isImageFile = (file: File) => {
   );
 };
 
-// --- Zod Schema for Validation (STATUS REMOVED) ---
 const createCustomerSchema = z.object({
   customer_company_name: z.string().min(1, "Customer company name is required"),
   full_name: z.string().min(1, "Full name is required"),
@@ -43,7 +37,6 @@ const createCustomerSchema = z.object({
     .string()
     .min(6, "Telephone number must be at least 6 digits")
     .max(15, "Telephone number must be max 15 digits"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
   city: z.string().min(1, "City is required"),
   address: z.string().min(1, "Address is required").max(250),
   logo_file: z
@@ -56,14 +49,11 @@ const createCustomerSchema = z.object({
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 
-// --- Component ---
 export default function CreateCustomer() {
   const [isLoading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { data: session } = useSession();
   const accessToken = session?.user?.access_token;
-  console.log(accessToken, "accessToken");
   const [open, setOpen] = useState(false);
   const formMethods = useForm<CreateCustomerInput>({
     resolver: zodResolver(createCustomerSchema),
@@ -76,18 +66,19 @@ export default function CreateCustomer() {
 
     try {
       const formData = new FormData();
+
       formData.append("customer_company_name", data.customer_company_name);
       formData.append("full_name", data.full_name);
       formData.append("username", data.username);
       formData.append("email", data.email);
-      formData.append("password", data.password);
+      formData.append("password", "Abc@1234");
       formData.append("city", data.city);
       formData.append("phone_number", data.phone_number);
       formData.append("telephone_number", data.telephone_number);
       formData.append("address", data.address);
       formData.append("status", "active");
 
-      // Handle file upload
+      // Handle file upload properly
       if (data.logo_file && data.logo_file.length > 0) {
         formData.append("logo_file", data.logo_file[0]);
       }
@@ -101,7 +92,7 @@ export default function CreateCustomer() {
 
       if (response.status === 200 || response.status === 201) {
         toast.success("Customer created successfully!");
-        reset();
+        reset(); // Reset form
         setOpen(false);
       }
     } catch (err: any) {
@@ -111,7 +102,7 @@ export default function CreateCustomer() {
         err.response?.data?.error ||
         err.response?.data?.detail ||
         err.message ||
-        "Failed to create company";
+        "Failed to customer company";
 
       setErrorMsg(errorMessage);
       toast.error(errorMessage);
@@ -130,7 +121,10 @@ export default function CreateCustomer() {
       </Dialog.Trigger>
 
       <Dialog.Content maxWidth="600px">
-        <Dialog.Title>Customer Create</Dialog.Title>
+        <Dialog.Title>Create Customer</Dialog.Title>
+        <hr className="my-4" />
+
+        {/* Use react-hook-form's handleSubmit */}
         <Form<CreateCustomerInput>
           onSubmit={onSubmit}
           validationSchema={createCustomerSchema}
@@ -142,9 +136,8 @@ export default function CreateCustomer() {
           {({ register, control, formState: { errors } }) => (
             <>
               <div className="grid gap-4">
-                {/* Customer Company Name */}
                 <div>
-                  <Label.Root className="mb-1 block font-medium">
+                  <Label.Root className="mb-1 block font-normal">
                     Customer Company Name
                   </Label.Root>
                   <Input {...register("customer_company_name")} />
@@ -152,10 +145,8 @@ export default function CreateCustomer() {
                     {errors.customer_company_name?.message}
                   </p>
                 </div>
-
-                {/* Full Name */}
                 <div>
-                  <Label.Root className="mb-1 block font-medium">
+                  <Label.Root className="mb-1 block font-normal">
                     Full Name
                   </Label.Root>
                   <Input {...register("full_name")} />
@@ -163,11 +154,9 @@ export default function CreateCustomer() {
                     {errors.full_name?.message}
                   </p>
                 </div>
-
                 <Flex gap="2">
-                  {/* Username */}
                   <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
+                    <Label.Root className="mb-1 block font-normal">
                       Username
                     </Label.Root>
                     <Input {...register("username")} />
@@ -175,10 +164,8 @@ export default function CreateCustomer() {
                       {errors.username?.message}
                     </p>
                   </Grid>
-
-                  {/* Email */}
                   <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
+                    <Label.Root className="mb-1 block font-normal">
                       Email
                     </Label.Root>
                     <Input {...register("email")} type="email" />
@@ -188,9 +175,8 @@ export default function CreateCustomer() {
                   </Grid>
                 </Flex>
                 <Flex gap="3">
-                  {/* Phone Number */}
                   <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
+                    <Label.Root className="mb-1 block font-normal">
                       Phone Number
                     </Label.Root>
                     <Input
@@ -208,31 +194,34 @@ export default function CreateCustomer() {
                       {errors.phone_number?.message}
                     </p>
                   </Grid>
-
-                  {/* Telephone Number */}
                   <Grid width={"100%"}>
-                    <Label.Root className="mb-1 block font-medium">
+                    <Label.Root className="mb-1 block font-normal">
                       Telephone Number
                     </Label.Root>
-                    <Input {...register("telephone_number")} />
+                    <Input
+                      {...register("telephone_number")}
+                      maxLength={15}
+                      onInput={(e) => {
+                        e.currentTarget.value = e.currentTarget.value.replace(
+                          /[^0-9]/g,
+                          ""
+                        );
+                      }}
+                    />
                     <p className="text-sm text-red-500">
                       {errors.telephone_number?.message}
                     </p>
                   </Grid>
                 </Flex>
-
-                {/* City */}
                 <div>
-                  <Label.Root className="mb-1 block font-medium">
+                  <Label.Root className="mb-1 block font-normal">
                     City
                   </Label.Root>
                   <Input {...register("city")} />
                   <p className="text-sm text-red-500">{errors.city?.message}</p>
                 </div>
-
-                {/* Address (Textarea) */}
                 <div>
-                  <Label.Root className="mb-1 block font-medium">
+                  <Label.Root className="mb-1 block font-normal">
                     Address
                   </Label.Root>
                   <TextArea
@@ -244,34 +233,6 @@ export default function CreateCustomer() {
                     {errors.address?.message}
                   </p>
                 </div>
-
-                {/* Password + Toggle */}
-                <div>
-                  <Label.Root className="mb-1 block font-medium">
-                    Password
-                  </Label.Root>
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      {...register("password")}
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-2.5"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                    >
-                      {showPassword ? (
-                        <EyeClosed className="w-4 h-4 text-gray-500" />
-                      ) : (
-                        <Eye className="w-4 h-4 text-gray-500" />
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-sm text-red-500">
-                    {errors.password?.message}
-                  </p>
-                </div>
-
                 {/* File Upload (Controlled) */}
                 <div>
                   <Label.Root className="mb-1 block font-medium">
@@ -307,15 +268,23 @@ export default function CreateCustomer() {
                 </div>
               </div>
 
-              {/* Error Message */}
               {errorMsg && (
-                <span className="text-sm text-red-500">{errorMsg}</span>
+                <div className="p-3 bg-red-50 border border-red-200 rounded">
+                  <span className="text-sm text-red-600">{errorMsg}</span>
+                </div>
               )}
 
-              {/* Footer Buttons */}
-              <div className="flex items-center justify-end gap-4">
+              <div className="flex items-center justify-end gap-4 mt-6">
                 <Dialog.Close>
-                  <Button type="button" variant="ghost" disabled={isLoading}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={isLoading}
+                    onClick={() => {
+                      reset();
+                      setOpen(false);
+                    }}
+                  >
                     Cancel
                   </Button>
                 </Dialog.Close>

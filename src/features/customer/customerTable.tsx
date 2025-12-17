@@ -11,29 +11,49 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import DeleteCustomer from "./deleteCustomer";
 import EditCustomer from "./editCustomer";
-import { CustomerPorps } from "./type";
-import { Button, Flex } from "@radix-ui/themes";
+import { ICustomer } from "./type";
 import { Input } from "@/components/ui/input";
+import { Download, SquarePen } from "lucide-react";
+import { Dialog, Flex, IconButton } from "@radix-ui/themes";
+import { Button } from "@/components/ui/button";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const ActionCellRenderer = (props: ICellRendererParams<CustomerPorps>) => {
+interface ActionCellRendererProps extends ICellRendererParams<ICustomer> {
+  setRefreshApi: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const ActionCellRenderer = (props: ActionCellRendererProps) => {
+  const [open, setOpen] = useState(false);
+
   return (
     <div style={{ display: "flex", gap: "8px", marginTop: "3px" }}>
-      {/* <EditCustomer data={props?.data} /> */}
+      <Dialog.Root open={open} onOpenChange={setOpen}>
+        <Dialog.Trigger>
+          <IconButton color="violet" variant="soft">
+            <SquarePen width="18" height="18" />
+          </IconButton>
+        </Dialog.Trigger>
+        <EditCustomer
+          data={props?.data}
+          open={open}
+          setOpen={setOpen}
+          setRefreshApi={props.setRefreshApi}
+        />
+      </Dialog.Root>
       <DeleteCustomer data={props?.data} />
     </div>
   );
-  //
 };
 
-export default function CustomerTable({ data }: { data: CustomerPorps[] }) {
-  const [rowData] = useState<CustomerPorps[]>(data);
-  const [colDefs] = useState<ColDef<CustomerPorps>[]>([
+export default function CustomerTable({ data }: { data: ICustomer[] }) {
+  const [rowData] = useState<ICustomer[]>(data);
+  const [colDefs] = useState<ColDef<ICustomer>[]>([
     { headerName: "Company", field: "customer_company_name", filter: true },
     { headerName: "Full Name", field: "full_name", filter: true },
     { headerName: "Email", field: "user.email", filter: true },
     { headerName: "Mobile", field: "phone_number" },
+    { headerName: "Tel number", field: "telephone_number" },
     { headerName: "Status", field: "status", filter: true },
     { headerName: "City", field: "city" },
     {
@@ -54,13 +74,11 @@ export default function CustomerTable({ data }: { data: CustomerPorps[] }) {
 
   const defaultColDef = { flex: 1, minWidth: 150 };
   const [quickFilterText, setQuickFilterText] = useState("");
-
-  const [gridApi, setGridApi] = useState<GridApi<CustomerPorps> | null>(null);
+  const [gridApi, setGridApi] = useState<GridApi<ICustomer> | null>(null);
 
   const onGridReady = (params: any) => {
-    setGridApi(params.api as GridApi<CustomerPorps>);
+    setGridApi(params.api as GridApi<ICustomer>);
 
-    // Simulate loading time
     setTimeout(() => {
       params.api.hideOverlay();
     }, 1500);
@@ -87,7 +105,14 @@ export default function CustomerTable({ data }: { data: CustomerPorps[] }) {
           value={quickFilterText}
           onChange={(e) => setQuickFilterText(e.target.value)}
         />
-        <Button onClick={handleSlowCsvDownload}>Download CSV (Slow)</Button>
+        <Button
+          className="py-2 px-6 h-[36px]"
+          variant="secondary"
+          onClick={handleSlowCsvDownload}
+        >
+          <Download />
+          Download CSV
+        </Button>
       </Flex>
       <div className="ag-theme-quartz" style={{ height: 440, width: "100%" }}>
         <AgGridReact

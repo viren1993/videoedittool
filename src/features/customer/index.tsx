@@ -5,16 +5,13 @@ import { useEffect, useState } from "react";
 
 import { DATA_API } from "@/config/constants";
 import CustomerTable from "./customerTable";
-import { Flex } from "@radix-ui/themes";
-import CreateCustomer from "./createCustomer";
-import { CustomerPorps } from "./type";
+import { Skeleton } from "@radix-ui/themes";
+import { ICustomer } from "./type";
 
 export default function Customer() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
-  const [customersData, setcustomersData] = useState(
-    null as CustomerPorps[] | any
-  );
+  const [customersData, setcustomersData] = useState(null as ICustomer[] | any);
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -48,11 +45,11 @@ export default function Customer() {
 
   return (
     <>
-      <Flex gap="2" justify="between">
-        <h1>Customer List</h1>
-        <CreateCustomer />
-      </Flex>
-      {customersData?.length > 0 && <CustomerTable data={customersData} />}
+      {isLoading ? (
+        <Skeleton width="100%" height="48px" />
+      ) : (
+        <CustomerTable data={customersData} />
+      )}
     </>
   );
 }

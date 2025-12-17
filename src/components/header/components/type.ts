@@ -56,7 +56,7 @@ export const companyMenuItems: MenuItem[] = [
       },
       {
         name: "Image Templates",
-        href: "/company/templates/image",
+        href: "/company/templates",
         desc: "Browse & customize image templates.",
       },
     ],

@@ -1,11 +1,11 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { DATA_API } from "@/config/constants";
 import CompanyTable from "./companyTable";
-import { Flex, Grid } from "@radix-ui/themes";
+import { Flex, Heading, Skeleton } from "@radix-ui/themes";
 import CreateCustomer from "./createCompanie";
 
 export interface CompanyListProps {
@@ -32,10 +32,12 @@ export default function Companies() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [companies, setCompanies] = useState(null as CompanyListProps[] | any);
+  const [refreshApi, setRefreshApi] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchCompany = async () => {
       setIsLoading(true);
+      setRefreshApi(false);
       try {
         const res = await fetch(`${DATA_API}/company`, {
           method: "GET",
@@ -61,16 +63,28 @@ export default function Companies() {
       fetchCompany();
     }
 
+    if (refreshApi) {
+      fetchCompany();
+    }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
+  }, [session, refreshApi]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshApi((prev) => !prev);
+  }, []);
 
   return (
     <>
       <Flex gap="2" justify="between">
-        <h1>Companies List</h1>
-        <CreateCustomer />
+        <Heading as="h1">Companies List</Heading>
+        <CreateCustomer setRefreshApi={handleRefresh} />
       </Flex>
-      {companies?.length > 0 && <CompanyTable data={companies} />}
+      {isLoading ? (
+        <Skeleton width="48px" height="48px" />
+      ) : (
+        <CompanyTable data={companies} setRefreshApi={handleRefresh} />
+      )}
     </>
   );
 }
