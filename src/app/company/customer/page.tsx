@@ -23,7 +23,7 @@ const pageHeader = {
 
 export default function CustomerPage() {
   return (
-    <Grid className="@container">
+    <Grid className="container flex-1 mx-auto p-8">
       <Flex justify={"between"} align={"start"}>
         <PageHeader
           className="pt-2"

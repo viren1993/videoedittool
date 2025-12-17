@@ -264,7 +264,7 @@ export default function Header({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="flex-1 container mx-auto p-8">{children}</main>
+      <main>{children}</main>
     </div>
   );
 }

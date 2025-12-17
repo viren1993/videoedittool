@@ -6,6 +6,7 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
+  Checkbox,
   Dialog,
   Flex,
   Grid,
@@ -13,34 +14,20 @@ import {
   Text,
   TextArea,
 } from "@radix-ui/themes";
-import { SquarePen } from "lucide-react";
-import { Form } from "@/components/ui/form";
 import { DATA_API } from "@/config/constants";
 import { toast } from "sonner";
 import * as Label from "@radix-ui/react-label";
 import { Input } from "@/components/ui/input";
 import { z } from "zod";
-
-export interface GetCompany {
-  company_name: string;
-  description: string;
-  mobile: string;
-  logo_url: string;
-  user_id: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  email: string;
-  username: string;
-  company_id: string;
-  role: string;
-  user_status: string;
-  user_created_at: string;
-  user_updated_at: string;
-}
+import { ICustomer } from "./type";
+import { Form } from "@/components/ui/form";
+import axios from "axios";
 
 interface CompanieEditProps {
-  data?: Partial<GetCompany>;
+  data?: Partial<ICustomer>;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  setRefreshApi: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const isImageFile = (file: File) => {
@@ -51,79 +38,89 @@ const isImageFile = (file: File) => {
   );
 };
 
-// --- Zod Schema for Validation (STATUS REMOVED) ---
 const createCustomerSchema = z.object({
-  company_name: z.string().min(1, "Customer company name is required"),
+  customer_company_name: z.string().min(1, "Customer company name is required"),
+  full_name: z.string().min(1, "Full name is required"),
   username: z.string().min(1).max(20, "Username must be max 20 characters"),
   email: z.string().min(1, "Email is required").email("Invalid email format"),
-  mobile: z
+  phone_number: z
     .string()
     .min(10, "Phone number must be 10 digits")
     .max(10, "Phone number must be 10 digits")
     .regex(/^[0-9]{10}$/, "Phone number must contain only digits"),
+  telephone_number: z
+    .string()
+    .min(6, "Telephone number must be at least 6 digits")
+    .max(15, "Telephone number must be max 15 digits"),
+  city: z.string().min(1, "City is required"),
+  address: z.string().min(1, "Address is required").max(250),
   logo_file: z
     .any()
     .refine((files) => !files || files.length === 0 || isImageFile(files[0]), {
       message: "Logo must be a PNG, JPG, or JPEG image.",
     })
     .optional(),
+  status: z.boolean(),
+  existing_logo_url: z.string().optional(), // Add this to handle existing logo
 });
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 
-export default function CompanieEdit({ data }: CompanieEditProps) {
+export default function EditCustomer({
+  data,
+  setOpen,
+  setRefreshApi,
+}: CompanieEditProps) {
   const [isLoading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { data: session } = useSession();
   const accessToken = session?.user?.access_token;
-  const [open, setOpen] = useState(false);
-  const formMethods = useForm<CreateCustomerInput>({
-    resolver: zodResolver(createCustomerSchema),
-  });
-  const { reset } = formMethods;
 
   const onSubmit: SubmitHandler<CreateCustomerInput> = async (
     formDataInput
   ) => {
     setLoading(true);
     setErrorMsg(null);
-
     try {
       const formData = new FormData();
-
-      formData.append("company_name", formDataInput.company_name);
+      formData.append(
+        "customer_company_name",
+        formDataInput.customer_company_name
+      );
+      formData.append("full_name", formDataInput.full_name);
       formData.append("username", formDataInput.username);
-
       formData.append("email", formDataInput.email);
-      formData.append("mobile", formDataInput.phone_number);
+      formData.append("phone_number", formDataInput.phone_number);
+      formData.append("telephone_number", formDataInput.telephone_number);
+      formData.append("city", formDataInput.city);
+      formData.append("address", formDataInput.address);
       formData.append("status", data?.status || "active");
 
-      // FIX: description = address
-      formData.append("description", formDataInput.address || "");
-
-      if (formDataInput.logo_file && formDataInput.logo_file[0]) {
+      if (formDataInput.logo_file && formDataInput.logo_file.length > 0) {
         formData.append("logo_file", formDataInput.logo_file[0]);
+      } else if (!formDataInput.existing_logo_url) {
+        // If no existing logo and no new file, you might want to handle removal
+        formData.append("logo_file", ""); // Send empty to remove logo
       }
 
-      const companyId = data?.company_id;
-      if (!companyId) {
-        throw new Error("Company ID is missing for update.");
+      const customerId = data?.id;
+      if (!customerId) {
+        throw new Error("Customer ID is missing for update.");
       }
 
-      const res = await fetch(`${DATA_API}/company/${companyId}`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${accessToken}` },
-        body: formData,
-      });
+      const response = await axios.patch(
+        `${DATA_API}/customer/${customerId}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
-      const response = await res.json();
-
-      if (res.ok) {
-        toast.success(<Text>Company updated successfully!</Text>);
+      if (response.status === 200 || response.status === 201) {
+        toast.success(<Text>Customer updated successfully!</Text>);
         setOpen(false);
-      } else {
-        setErrorMsg(response?.detail || "Failed to update company");
-        toast.error("Failed to update company");
       }
     } catch (error) {
       setErrorMsg("Something went wrong, please try again.");
@@ -134,52 +131,46 @@ export default function CompanieEdit({ data }: CompanieEditProps) {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger>
-        <IconButton color="violet" variant="soft">
-          <SquarePen width="18" height="18" />
-        </IconButton>
-      </Dialog.Trigger>
-      <Dialog.Content maxWidth="600px">
-        <Dialog.Title>Edit Company</Dialog.Title>
-        <Dialog.Description>
-          Edit the company details.
-        </Dialog.Description>
+    <Dialog.Content maxWidth="600px">
+      <Dialog.Title>Edit Customer</Dialog.Title>
+      <hr className="my-4" />
 
-        <Form<CreateCustomerInput>
-          onSubmit={onSubmit}
-          validationSchema={createCustomerSchema}
-          useFormProps={{
-            defaultValues: {
-              company_name: data?.company_name || "",
-              username: data?.username || "",
-              email: data?.email || "",
-              phone_number: data?.mobile?.replace("+91-", "") || "",
-              telephone_number: "",
-              city: "",
-              address: data?.description || "",
-              logo_file: undefined,
-            },
-          }}
-          className="grid grid-cols-1 gap-6 mt-4"
-        >
+      <Form<CreateCustomerInput>
+        onSubmit={onSubmit}
+        validationSchema={createCustomerSchema}
+        useFormProps={{
+          defaultValues: {
+            customer_company_name: data?.customer_company_name,
+            full_name: data?.full_name,
+            username: data?.user?.username,
+            email: data?.user?.email,
+            phone_number: data?.phone_number,
+            telephone_number: data?.telephone_number,
+            city: data?.city,
+            address: data?.address,
+            status: data?.status === "active" || false,
+            existing_logo_url: data?.logo_url,
+          },
+        }}
+        className="grid grid-cols-1 gap-6 mt-4"
+      >
+        {({ register, control, formState: { errors }, watch }) => {
+          const existingLogoUrl = watch("existing_logo_url");
+          const logoFile = watch("logo_file");
 
-          {({ register, control, formState: { errors } }) => (
+          return (
             <>
-
               <div className="grid gap-4">
-                {/* Customer Company Name */}
                 <div>
                   <Label.Root className="mb-1 block font-medium">
                     Customer Company Name
                   </Label.Root>
-                  <Input {...register("company_name")} />
+                  <Input {...register("customer_company_name")} />
                   <p className="text-sm text-red-500">
-                    {errors.company_name?.message}
+                    {errors.customer_company_name?.message}
                   </p>
                 </div>
                 <Flex gap="2">
-                  {/* Username */}
                   <Grid width={"100%"}>
                     <Label.Root className="mb-1 block font-medium">
                       Username
@@ -189,7 +180,6 @@ export default function CompanieEdit({ data }: CompanieEditProps) {
                       {errors.username?.message}
                     </p>
                   </Grid>
-                  {/* Email */}
                   <Grid width={"100%"}>
                     <Label.Root className="mb-1 block font-medium">
                       Email
@@ -209,7 +199,7 @@ export default function CompanieEdit({ data }: CompanieEditProps) {
                     <Input
                       placeholder="Enter 10 digit phone number"
                       maxLength={10}
-                      {...register("mobile")}
+                      {...register("phone_number")}
                       onInput={(e) => {
                         e.currentTarget.value = e.currentTarget.value.replace(
                           /[^0-9]/g,
@@ -218,15 +208,24 @@ export default function CompanieEdit({ data }: CompanieEditProps) {
                       }}
                     />
                     <p className="text-sm text-red-500">
-                      {errors.mobile?.message}
+                      {errors.phone_number?.message}
                     </p>
                   </Grid>
-                  {/* Telephone Number */}
                   <Grid width={"100%"}>
                     <Label.Root className="mb-1 block font-medium">
                       Telephone Number
                     </Label.Root>
-                    <Input {...register("telephone_number")} />
+                    <Input
+                      placeholder="Enter 10 digit phone number"
+                      maxLength={10}
+                      {...register("telephone_number")}
+                      onInput={(e) => {
+                        e.currentTarget.value = e.currentTarget.value.replace(
+                          /[^0-9]/g,
+                          ""
+                        );
+                      }}
+                    />
                     <p className="text-sm text-red-500">
                       {errors.telephone_number?.message}
                     </p>
@@ -240,7 +239,6 @@ export default function CompanieEdit({ data }: CompanieEditProps) {
                   <Input {...register("city")} />
                   <p className="text-sm text-red-500">{errors.city?.message}</p>
                 </div>
-                {/* Address (Textarea) */}
                 <div>
                   <Label.Root className="mb-1 block font-medium">
                     Address
@@ -254,38 +252,80 @@ export default function CompanieEdit({ data }: CompanieEditProps) {
                     {errors.address?.message}
                   </p>
                 </div>
-                {/* File Upload (Controlled) */}
                 <div>
                   <Label.Root className="mb-1 block font-medium">
                     Upload Logo (PNG/JPG/JPEG)
                   </Label.Root>
+                  {existingLogoUrl && !logoFile?.length && (
+                    <div className="mb-3">
+                      <div className="flex items-center gap-3 mb-2">
+                        <img
+                          src={`${DATA_API}/media/${existingLogoUrl}`}
+                          alt="Current customer Logo"
+                          className="object-cover h-[100px] rounded border"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {logoFile?.length > 0 && (
+                    <div className="mb-3">
+                      <Text size="2" color="gray" className="mb-1 block">
+                        New logo preview:
+                      </Text>
+                      <img
+                        src={URL.createObjectURL(logoFile[0])}
+                        alt="New logo preview"
+                        className="h-16 w-16 object-cover rounded border"
+                      />
+                    </div>
+                  )}
                   <Controller
                     name="logo_file"
                     control={control}
                     render={({ field: { onChange, value } }) => (
                       <div>
                         <input
-                          type="file" // Use the accept attribute to suggest file types
-                          accept=".png, .jpg, .jpeg, image/png, image/jpeg"
-                          className="block border p-2 rounded" // Use onChange to capture the FileList and update the form state
+                          type="file"
+                          accept=".png,.jpg,.jpeg"
+                          className="block border p-2 rounded w-full"
                           onChange={(e) => onChange(e.target.files)}
                         />
-                        {/* Display the selected file name if a file is present */}
-                        {value?.length > 0 && (
-                          <Text className="text-green-600 text-sm mt-2">
-                            Selected: **
-                            {value[0].name}** (
-                            {(value[0].size / 1024).toFixed(2)} KB)
-                          </Text>
-                        )}
-                        {/* Ensure message is treated as a string */}
                         <p className="text-sm text-red-500 mt-1">
                           {errors.logo_file?.message?.toString()}
                         </p>
+                        {value?.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="soft"
+                            size="1"
+                            onClick={() => onChange(null)}
+                            className="mt-2"
+                          >
+                            Clear selected file
+                          </Button>
+                        )}
                       </div>
                     )}
                   />
                 </div>
+                <Controller
+                  name="status"
+                  control={control}
+                  render={({ field: { onChange, value, ref } }) => (
+                    <Text as="label" size="2">
+                      <Flex gap="2">
+                        <Checkbox
+                          checked={value}
+                          onCheckedChange={(checked) => {
+                            onChange(checked === true);
+                          }}
+                          ref={ref}
+                        />
+                        Status
+                      </Flex>
+                    </Text>
+                  )}
+                />
               </div>
               {/* Error Message */}
               {errorMsg && (
@@ -303,9 +343,9 @@ export default function CompanieEdit({ data }: CompanieEditProps) {
                 </Button>
               </div>
             </>
-          )}
-        </Form>
-      </Dialog.Content>
-    </Dialog.Root>
+          );
+        }}
+      </Form>
+    </Dialog.Content>
   );
 }

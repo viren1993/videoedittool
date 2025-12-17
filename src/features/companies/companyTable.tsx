@@ -11,7 +11,7 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import DeleteCompanie from "./deleteCompanie";
 import EditCompanie from "./editCompanie";
-import { Dialog, Flex, Grid, IconButton } from "@radix-ui/themes";
+import { Dialog, Flex, IconButton } from "@radix-ui/themes";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SquarePen } from "lucide-react";
@@ -51,7 +51,6 @@ const ActionCellRenderer = (props: ActionCellRendererProps) => {
       <DeleteCompanie data={props?.data} setRefreshApi={props.setRefreshApi} />
     </div>
   );
-  //
 };
 
 interface CompanyTableProps {

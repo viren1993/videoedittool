@@ -1,28 +1,32 @@
-export interface CustomerUser {
+// User interface
+export interface IUser {
+  id: string;
   username: string;
   email: string;
-  role: string;
-  status: string;
+  role: "company" | "superadmin";
+  status: "active" | "inactive";
   created_at: string;
   updated_at: string;
-  id: string;
 }
 
-export interface CustomerCompany {
+// Company interface
+export interface ICompany {
+  id: string;
   company_name: string;
   description: string;
   mobile: string;
-  logo_url: string;
-  user_id: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
   email: string;
   username: string;
-  id: string;
+  logo_url: string;
+  user_id: string;
+  status: "active" | "inactive";
+  created_at: string;
+  updated_at: string;
 }
 
-export interface CustomerPorps {
+// Customer interface (Main)
+export interface ICustomer {
+  id: string;
   customer_company_name: string;
   full_name: string;
   logo_url: string;
@@ -32,10 +36,9 @@ export interface CustomerPorps {
   address: string;
   linked_company_id: string;
   user_id: string;
-  status: string;
+  status: "active" | "inactive";
   created_at: string;
   updated_at: string;
-  user: CustomerUser;
-  company: CustomerCompany;
-  id: string;
+  user: IUser;
+  company: ICompany;
 }

@@ -43,13 +43,6 @@ export default function Templates() {
               <Badge color="blue" variant="soft">
                 {template.category}
               </Badge>
-
-              <Badge
-                color={template.status === "active" ? "green" : "gray"}
-                variant="soft"
-              >
-                {template.status}
-              </Badge>
             </Flex>
           </Flex>
           <Flex gap="2" mt="4" justify="between">

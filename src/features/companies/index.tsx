@@ -33,7 +33,6 @@ export default function Companies() {
   const [isLoading, setIsLoading] = useState(false);
   const [companies, setCompanies] = useState(null as CompanyListProps[] | any);
   const [refreshApi, setRefreshApi] = useState<boolean>(false);
-  console.log("refreshApi", refreshApi);
 
   useEffect(() => {
     const fetchCompany = async () => {
