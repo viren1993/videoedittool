@@ -12,7 +12,9 @@ export type IMenuItem =
   | "captions"
   | "voiceOver"
   | "elements"
-  | "ai-voice";
+  | "ai-voice"
+  | "customer-data"
+  | "categories";
 export interface ILayoutState {
   cropTarget: ITrackItem | null;
   trackItem: ITrackItem | null;

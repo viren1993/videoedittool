@@ -40,6 +40,8 @@ import {
   Type,
   UploadIcon,
   User,
+  UserCircle,
+  Users,
   VideoIcon,
   WandSparkles,
   X,
@@ -53,7 +55,8 @@ import {
   GalleryVertical,
   ChevronsUp,
   Volume2,
-  ShapesIcon
+  ShapesIcon,
+  LayoutGrid
 } from "lucide-react";
 
 export type Icon = LucideIcon;
@@ -388,6 +391,8 @@ export const Icons = {
     </svg>
   ),
   zap: ZapIcon,
+  customerData: UserCircle,
+  categories: LayoutGrid,
   transition: (props: LucideProps) => (
     <svg
       viewBox="0 0 24 24"

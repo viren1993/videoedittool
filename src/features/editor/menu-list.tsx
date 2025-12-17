@@ -61,6 +61,18 @@ const MENU_ITEMS = [
     icon: Icons.volume,
     label: "AI Voice",
     ariaLabel: "Generate AI voice from text"
+  },
+  {
+    id: "customer-data",
+    icon: Icons.customerData,
+    label: "Customer",
+    ariaLabel: "Insert customer data fields"
+  },
+  {
+    id: "categories",
+    icon: Icons.categories,
+    label: "Categories",
+    ariaLabel: "Browse template categories"
   }
 ] as const;
 
