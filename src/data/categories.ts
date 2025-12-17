@@ -27,8 +27,6 @@ export const categories = [
   { label: "Dolls", key: "dolls" },
   { label: "Durga Puja", key: "durga_puja" },
   { label: "Dussehra", key: "dussehra" },
-  { label: "Easter Day", key: "easter_day" },
-  { label: "Eid", key: "eid" },
   { label: "Father's Day", key: "fathers_day" },
   { label: "Friendship", key: "friendship" },
   { label: "Ganesh Chaturthi", key: "ganesh_chaturthi" },

@@ -5,6 +5,7 @@ import { HISTORY_UNDO, HISTORY_REDO, DESIGN_RESIZE } from "@designcombo/state";
 import { Icons } from "@/components/shared/icons";
 import {
   Popover,
+  PopoverClose,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
@@ -12,7 +13,6 @@ import {
   ChevronDown,
   Download,
   ProportionsIcon,
-  ShareIcon,
   Save,
   LayoutGrid,
 } from "lucide-react";
@@ -32,10 +32,10 @@ import {
   useIsSmallScreen,
 } from "@/hooks/use-media-query";
 
-import { LogoIcons } from "@/components/shared/logos";
 import Link from "next/link";
 import { saveTemplate, extractDynamicFields } from "@/utils/template-storage";
 import { toast } from "sonner";
+import { categories } from "@/data/categories";
 
 export default function Navbar({
   user,
@@ -50,7 +50,6 @@ export default function Navbar({
 }) {
   const [title, setTitle] = useState(projectName);
   const isLargeScreen = useIsLargeScreen();
-  const isMediumScreen = useIsMediumScreen();
   const isSmallScreen = useIsSmallScreen();
 
   const handleUndo = () => {
@@ -61,9 +60,8 @@ export default function Navbar({
     dispatch(HISTORY_REDO);
   };
 
-  const handleCreateProject = async () => {};
+  // const handleCreateProject = async () => {};
 
-  // Create a debounced function for setting the project name
   const debouncedSetProjectName = useCallback(
     debounce((name: string) => {
       console.log("Debounced setProjectName:", name);
@@ -72,7 +70,6 @@ export default function Navbar({
     []
   );
 
-  // Update the debounced function whenever the title changes
   useEffect(() => {
     debouncedSetProjectName(title);
   }, [title, debouncedSetProjectName]);
@@ -81,6 +78,38 @@ export default function Navbar({
     setTitle(e.target.value);
   };
 
+  const [category, setCategory] = useState("");
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const getAspectRatioLabel = (width: number, height: number): string => {
+    const ratio = width / height;
+    if (Math.abs(ratio - 16 / 9) < 0.1) return "16:9";
+    if (Math.abs(ratio - 9 / 16) < 0.1) return "9:16";
+    if (Math.abs(ratio - 1) < 0.1) return "1:1";
+    if (Math.abs(ratio - 4 / 5) < 0.1) return "4:5";
+    return `${width}x${height}`;
+  };
+  const handleSave = () => {
+    const data = {
+      id: generateId(),
+      ...stateManager.toJSON(),
+    };
+
+    const dynamicFields = extractDynamicFields(data);
+    const size = data.size || { width: 1080, height: 1920 };
+    const aspectRatio = getAspectRatioLabel(size.width, size.height);
+
+    const template = saveTemplate({
+      name: projectName || "Untitled Template",
+      category: category || undefined,
+      aspectRatio,
+      templateData: data,
+      dynamicFields,
+    });
+
+    toast.success("Template saved successfully!", {
+      description: `${template.name} with ${dynamicFields.length} dynamic fields`,
+    });
+  };
   return (
     <div
       style={{
@@ -91,10 +120,6 @@ export default function Navbar({
     >
       <DownloadProgressModal />
       <div className="flex items-center gap-2">
-        {/* <div className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-md text-zinc-200"> */}
-        {/* <LogoIcons.scenify /> */}
-        {/* </div> */}
-
         <div className=" pointer-events-auto flex h-10 items-center px-1.5">
           <Button
             onClick={handleUndo}
@@ -116,20 +141,54 @@ export default function Navbar({
       </div>
 
       <div className="flex h-11 items-center justify-center gap-2">
-        {!isSmallScreen && (
-          <div className=" pointer-events-auto flex h-10 items-center gap-2 rounded-md px-2.5 text-muted-foreground">
-            <AutosizeInput
-              name="title"
-              value={title}
-              onChange={handleTitleChange}
-              width={200}
-              inputClassName="border-none outline-none px-1 bg-background text-sm font-medium text-zinc-200"
-            />
-          </div>
-        )}
+        {/* {!isSmallScreen && ( */}
+        <div className=" pointer-events-auto flex h-10 items-center gap-2 rounded-md px-2.5 text-muted-foreground">
+          <AutosizeInput
+            name="title"
+            value={title}
+            onChange={handleTitleChange}
+            width={200}
+            inputClassName="border-none outline-none px-1 bg-background text-sm font-medium text-zinc-200"
+          />
+        </div>
+        {/* )} */}
       </div>
       <div className="flex h-11 items-center justify-end gap-2">
         <div className=" pointer-events-auto flex h-10 items-center gap-2 rounded-md px-2.5">
+          <Popover open={isCategoryOpen} onOpenChange={setIsCategoryOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                className="flex h-7 gap-1 border border-border"
+                variant="outline"
+              >
+                <div>{category || "Select a category"}</div>
+                <ChevronDown width={16} />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="bg-background z-[251] w-[--radix-popover-trigger-width] px-2 py-2 overflow-y-auto max-h-60">
+              <div
+                className="flex h-7 items-center rounded-sm px-3 text-sm hover:cursor-pointer hover:bg-zinc-800 overflow-auto"
+                onClick={() => {
+                  setCategory("");
+                  setIsCategoryOpen(false);
+                }}
+              >
+                None
+              </div>
+              {categories.map((cat) => (
+                <div
+                  key={cat.key}
+                  className="flex h-7 items-center rounded-sm px-3 text-sm hover:cursor-pointer hover:bg-zinc-800"
+                  onClick={() => {
+                    setCategory(cat.label);
+                    setIsCategoryOpen(false);
+                  }}
+                >
+                  {cat.label}
+                </div>
+              ))}
+            </PopoverContent>
+          </Popover>
           <ResizeVideo />
           <Link href="/templates">
             <Button
@@ -141,110 +200,21 @@ export default function Navbar({
               <span className="hidden md:block">Templates</span>
             </Button>
           </Link>
-          <SaveTemplatePopover
-            stateManager={stateManager}
-            projectName={projectName}
-          />
+          <Button
+            className="flex h-7 gap-1 border border-border"
+            variant="outline"
+            size={isSmallScreen ? "icon" : "sm"}
+            onClick={handleSave}
+          >
+            <Save width={18} />
+            <span className="hidden md:block">Save</span>
+          </Button>
           <DownloadPopover stateManager={stateManager} />
         </div>
       </div>
     </div>
   );
 }
-
-const SaveTemplatePopover = ({
-  stateManager,
-  projectName,
-}: {
-  stateManager: StateManager;
-  projectName: string;
-}) => {
-  const isMediumScreen = useIsMediumScreen();
-  const [open, setOpen] = useState(false);
-  const [templateName, setTemplateName] = useState(
-    projectName || "Untitled Template"
-  );
-  const [category, setCategory] = useState("");
-
-  const handleSave = () => {
-    const data = {
-      id: generateId(),
-      ...stateManager.toJSON(),
-    };
-
-    const dynamicFields = extractDynamicFields(data);
-    const size = data.size || { width: 1080, height: 1920 };
-    const aspectRatio = getAspectRatioLabel(size.width, size.height);
-
-    const template = saveTemplate({
-      name: templateName || projectName || "Untitled Template",
-      category: category || undefined,
-      aspectRatio,
-      templateData: data,
-      dynamicFields,
-    });
-
-    toast.success("Template saved successfully!", {
-      description: `${template.name} with ${dynamicFields.length} dynamic fields`,
-    });
-    setOpen(false);
-  };
-
-  const getAspectRatioLabel = (width: number, height: number): string => {
-    const ratio = width / height;
-    if (Math.abs(ratio - 16 / 9) < 0.1) return "16:9";
-    if (Math.abs(ratio - 9 / 16) < 0.1) return "9:16";
-    if (Math.abs(ratio - 1) < 0.1) return "1:1";
-    if (Math.abs(ratio - 4 / 5) < 0.1) return "4:5";
-    return `${width}x${height}`;
-  };
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          className="flex h-7 gap-1 border border-border"
-          variant="outline"
-          size={isMediumScreen ? "sm" : "icon"}
-        >
-          <Save width={18} />
-          <span className="hidden md:block">Save</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="bg-sidebar z-[250] flex w-72 flex-col gap-4"
-      >
-        <Label>Save as Template</Label>
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">
-              Template Name
-            </Label>
-            <Input
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-              placeholder="Enter template name"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">
-              Category (optional)
-            </Label>
-            <Input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="e.g., Anniversary, Diwali"
-            />
-          </div>
-        </div>
-        <Button onClick={handleSave} className="w-full">
-          Save Template
-        </Button>
-      </PopoverContent>
-    </Popover>
-  );
-};
 
 const DownloadPopover = ({ stateManager }: { stateManager: StateManager }) => {
   const isMediumScreen = useIsMediumScreen();
@@ -363,9 +333,21 @@ const RESIZE_OPTIONS: ResizeOptionProps[] = [
       name: "1:1",
     },
   },
+  {
+    label: "4:5",
+    icon: "portrait",
+    description: "Instagram & Facebook feed",
+    value: {
+      width: 1080,
+      height: 1350,
+      name: "4:5",
+    },
+  },
 ];
 
 const ResizeVideo = () => {
+  const [customWidth, setCustomWidth] = useState(1080);
+  const [customHeight, setCustomHeight] = useState(1920);
   const handleResize = (options: ResizeValue) => {
     dispatch(DESIGN_RESIZE, {
       payload: {
@@ -373,6 +355,17 @@ const ResizeVideo = () => {
       },
     });
   };
+
+  const handleCustomResize = () => {
+    dispatch(DESIGN_RESIZE, {
+      payload: {
+        width: customWidth,
+        height: customHeight,
+        name: `${customWidth}x${customHeight}`,
+      },
+    });
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -382,7 +375,7 @@ const ResizeVideo = () => {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="z-[250] w-60 px-2.5 py-3">
-        <div className="text-sm">
+        <div className="text-sm space-y-2">
           {RESIZE_OPTIONS.map((option, index) => (
             <ResizeOption
               key={index}
@@ -393,6 +386,34 @@ const ResizeVideo = () => {
               description={option.description}
             />
           ))}
+          <div className="my-2 h-px bg-border/50" />
+          <div className="space-y-2">
+            <div className="text-xs text-muted-foreground">Custom size</div>
+
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                value={customWidth}
+                onChange={(e) => setCustomWidth(Number(e.target.value))}
+                placeholder="Width"
+              />
+              <Input
+                type="number"
+                value={customHeight}
+                onChange={(e) => setCustomHeight(Number(e.target.value))}
+                placeholder="Height"
+              />
+            </div>
+            <PopoverClose asChild>
+              <Button
+                onClick={handleCustomResize}
+                className="h-7 w-full"
+                variant="secondary"
+              >
+                Apply
+              </Button>
+            </PopoverClose>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
