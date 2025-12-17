@@ -10,6 +10,8 @@ import { VoiceOver } from "./voice-over";
 import { useIsLargeScreen } from "@/hooks/use-media-query";
 import { Uploads } from "./uploads";
 import { AiVoice } from "./ai-voice";
+import { CustomerData } from "./customer-data";
+import { Categories } from "./categories";
 
 const ActiveMenuItem = () => {
   const { activeMenuItem } = useLayoutStore();
@@ -50,6 +52,14 @@ const ActiveMenuItem = () => {
 
   if (activeMenuItem === "ai-voice") {
     return <AiVoice />;
+  }
+
+  if (activeMenuItem === "customer-data") {
+    return <CustomerData />;
+  }
+
+  if (activeMenuItem === "categories") {
+    return <Categories />;
   }
 
   return null;
