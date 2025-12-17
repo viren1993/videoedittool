@@ -13,8 +13,11 @@ import {
   Download,
   ProportionsIcon,
   ShareIcon,
+  Save,
+  LayoutGrid,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 import type StateManager from "@designcombo/state";
 import { generateId } from "@designcombo/timeline";
@@ -31,6 +34,8 @@ import {
 
 import { LogoIcons } from "@/components/shared/logos";
 import Link from "next/link";
+import { saveTemplate, extractDynamicFields } from "@/utils/template-storage";
+import { toast } from "sonner";
 
 export default function Navbar({
   user,
@@ -125,12 +130,98 @@ export default function Navbar({
       </div>
       <div className="flex h-11 items-center justify-end gap-2">
         <div className=" pointer-events-auto flex h-10 items-center gap-2 rounded-md px-2.5">
+          <Link href="/templates">
+            <Button className="h-7 gap-1 border border-border" variant="outline" size="sm">
+              <LayoutGrid width={18} />
+              <span className="hidden md:block">Templates</span>
+            </Button>
+          </Link>
+          <SaveTemplatePopover stateManager={stateManager} projectName={projectName} />
           <DownloadPopover stateManager={stateManager} />
         </div>
       </div>
     </div>
   );
 }
+
+const SaveTemplatePopover = ({ stateManager, projectName }: { stateManager: StateManager; projectName: string }) => {
+  const isMediumScreen = useIsMediumScreen();
+  const [open, setOpen] = useState(false);
+  const [templateName, setTemplateName] = useState(projectName || "Untitled Template");
+  const [category, setCategory] = useState("");
+
+  const handleSave = () => {
+    const data = {
+      id: generateId(),
+      ...stateManager.toJSON(),
+    };
+
+    const dynamicFields = extractDynamicFields(data);
+    const size = data.size || { width: 1080, height: 1920 };
+    const aspectRatio = getAspectRatioLabel(size.width, size.height);
+
+    const template = saveTemplate({
+      name: templateName || projectName || "Untitled Template",
+      category: category || undefined,
+      aspectRatio,
+      templateData: data,
+      dynamicFields,
+    });
+
+    toast.success("Template saved successfully!", {
+      description: `${template.name} with ${dynamicFields.length} dynamic fields`,
+    });
+    setOpen(false);
+  };
+
+  const getAspectRatioLabel = (width: number, height: number): string => {
+    const ratio = width / height;
+    if (Math.abs(ratio - 16/9) < 0.1) return "16:9";
+    if (Math.abs(ratio - 9/16) < 0.1) return "9:16";
+    if (Math.abs(ratio - 1) < 0.1) return "1:1";
+    if (Math.abs(ratio - 4/5) < 0.1) return "4:5";
+    return `${width}x${height}`;
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          className="flex h-7 gap-1 border border-border"
+          variant="outline"
+          size={isMediumScreen ? "sm" : "icon"}
+        >
+          <Save width={18} />
+          <span className="hidden md:block">Save</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="bg-sidebar z-[250] flex w-72 flex-col gap-4">
+        <Label>Save as Template</Label>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Template Name</Label>
+            <Input
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="Enter template name"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Category (optional)</Label>
+            <Input
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="e.g., Anniversary, Diwali"
+            />
+          </div>
+        </div>
+        <Button onClick={handleSave} className="w-full">
+          Save Template
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const DownloadPopover = ({ stateManager }: { stateManager: StateManager }) => {
   const isMediumScreen = useIsMediumScreen();
