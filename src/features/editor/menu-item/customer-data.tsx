@@ -4,44 +4,24 @@ import { dispatch } from "@designcombo/events";
 import { ADD_TEXT, ADD_ITEMS } from "@designcombo/state";
 import { generateId } from "@designcombo/timeline";
 import { nanoid } from "nanoid";
-import { Image, Type, Building2, User, Phone, MapPin, Mail } from "lucide-react";
-
-// Sample customer data structure - this would come from props or context in production
-const SAMPLE_CUSTOMER_DATA = {
-  customer_company_name: "parmar and sons",
-  full_name: "navneet parmar",
-  logo_url: "navneet007/22a6fedd50fb442f92b269d7874e572f_EdgeKart.png",
-  city: "Gujrati",
-  phone_number: "1234657890",
-  telephone_number: "1234567890",
-  address: "1st Floor Shivanjali Society, Dr Ambedkar Road, Off Carter Rd, near Ambedkar Statue, Khar West, Mumbai, Maharashtra 400052, India",
-  user: {
-    username: "navneet007",
-    email: "navneet007@gmail.com",
-  },
-  company: {
-    company_name: "TechVision Pvt LLP",
-    description: "We specialize in smart construction automation and site management systems.",
-    mobile: "+91-1234567890",
-    logo_url: "logo.jpg",
-    email: "info@telecom.com",
-  },
-};
+import { Image, Type, Building2, User, Phone, MapPin, Mail, AlertCircle, type LucideIcon } from "lucide-react";
+import { useMemo } from "react";
+import { useCustomerDataStore, type CustomerData as CustomerDataType } from "../store/use-customer-data-store";
 
 interface CustomerField {
   key: string;
   label: string;
   value: string;
   type: "text" | "image";
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   path: string;
 }
 
-// Generate dynamic fields from customer data
-const generateCustomerFields = (data: typeof SAMPLE_CUSTOMER_DATA): CustomerField[] => {
+const generateCustomerFields = (data: CustomerDataType | null): CustomerField[] => {
+  if (!data) return [];
+  
   const fields: CustomerField[] = [];
 
-  // Customer direct fields
   if (data.customer_company_name) {
     fields.push({
       key: "customer_company_name",
@@ -108,7 +88,6 @@ const generateCustomerFields = (data: typeof SAMPLE_CUSTOMER_DATA): CustomerFiel
     });
   }
 
-  // User nested fields
   if (data.user?.username) {
     fields.push({
       key: "user.username",
@@ -131,7 +110,6 @@ const generateCustomerFields = (data: typeof SAMPLE_CUSTOMER_DATA): CustomerFiel
     });
   }
 
-  // Company nested fields
   if (data.company?.company_name) {
     fields.push({
       key: "company.company_name",
@@ -190,9 +168,12 @@ const generateCustomerFields = (data: typeof SAMPLE_CUSTOMER_DATA): CustomerFiel
   return fields;
 };
 
-const CUSTOMER_FIELDS = generateCustomerFields(SAMPLE_CUSTOMER_DATA);
-
 export const CustomerData = () => {
+  const customerData = useCustomerDataStore((state) => state.customerData);
+  const setCustomerData = useCustomerDataStore((state) => state.setCustomerData);
+
+  const customerFields = useMemo(() => generateCustomerFields(customerData), [customerData]);
+
   const handleAddTextField = (field: CustomerField) => {
     dispatch(ADD_TEXT, {
       payload: {
@@ -243,8 +224,50 @@ export const CustomerData = () => {
     });
   };
 
-  const textFields = CUSTOMER_FIELDS.filter(f => f.type === "text");
-  const imageFields = CUSTOMER_FIELDS.filter(f => f.type === "image");
+  const handleLoadSampleData = () => {
+    setCustomerData({
+      customer_company_name: "parmar and sons",
+      full_name: "navneet parmar",
+      logo_url: "navneet007/22a6fedd50fb442f92b269d7874e572f_EdgeKart.png",
+      city: "Gujrati",
+      phone_number: "1234657890",
+      telephone_number: "1234567890",
+      address: "1st Floor Shivanjali Society, Dr Ambedkar Road, Off Carter Rd, near Ambedkar Statue, Khar West, Mumbai, Maharashtra 400052, India",
+      user: {
+        username: "navneet007",
+        email: "navneet007@gmail.com",
+      },
+      company: {
+        company_name: "TechVision Pvt LLP",
+        description: "We specialize in smart construction automation and site management systems.",
+        mobile: "+91-1234567890",
+        logo_url: "logo.jpg",
+        email: "info@telecom.com",
+      },
+    });
+  };
+
+  const textFields = customerFields.filter(f => f.type === "text");
+  const imageFields = customerFields.filter(f => f.type === "image");
+
+  if (!customerData) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <div className="text-text-primary flex h-12 flex-none items-center px-4 text-sm font-medium">
+          Customer Data
+        </div>
+        <div className="flex flex-col items-center justify-center p-6 text-center">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-sm text-muted-foreground mb-4">
+            No customer data loaded. Load customer data to insert dynamic fields into your template.
+          </p>
+          <Button onClick={handleLoadSampleData} variant="outline">
+            Load Sample Data
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col">
