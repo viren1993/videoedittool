@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { DATA_API } from "@/config/constants";
 import CompanyTable from "./companyTable";
-import { Flex, Grid, Skeleton } from "@radix-ui/themes";
+import { Flex, Heading, Skeleton } from "@radix-ui/themes";
 import CreateCustomer from "./createCompanie";
 
 export interface CompanyListProps {
@@ -77,7 +77,7 @@ export default function Companies() {
   return (
     <>
       <Flex gap="2" justify="between">
-        <h1>Companies List</h1>
+        <Heading as="h1">Companies List</Heading>
         <CreateCustomer setRefreshApi={handleRefresh} />
       </Flex>
       {isLoading ? (

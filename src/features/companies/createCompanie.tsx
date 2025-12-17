@@ -122,9 +122,7 @@ export default function CreateCustomer({
       </Dialog.Trigger>
       <Dialog.Content maxWidth="600px">
         <Dialog.Title>Create Company</Dialog.Title>
-        <Dialog.Description>
-          Add a new company to your account.
-        </Dialog.Description>
+        <hr className="my-4" />
         <Form<CreateCustomerInput>
           onSubmit={onSubmit}
           validationSchema={createCustomerSchema}

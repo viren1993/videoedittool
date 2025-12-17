@@ -33,7 +33,7 @@ export default function DeleteCompanie({
         toast.success(
           <Text className="bold">Company deleted successfully</Text>
         );
-        setRefreshApi(true);
+        // setRefreshApi(true);
       }
     } catch (error) {
       console.error(error);
