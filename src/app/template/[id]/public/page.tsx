@@ -264,11 +264,12 @@ function FieldInput({ field, onUpdate, onFileUpload }: FieldInputProps) {
     [field.id, onFileUpload]
   );
 
-  const accept: Record<string, string[]> = {
+  const acceptMap: Record<string, Record<string, string[]>> = {
     image: { "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"] },
     video: { "video/*": [".mp4", ".webm", ".mov"] },
     audio: { "audio/*": [".mp3", ".wav", ".ogg", ".m4a"] },
-  }[field.type] || {};
+  };
+  const accept = acceptMap[field.type] || {};
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

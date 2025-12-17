@@ -25,7 +25,24 @@ The editor supports dynamic customer data insertion for bulk template rendering:
 - **Customer Data Menu**: Insert dynamic text and image fields using `{{path}}` placeholders
 - **Supported Fields**: customer_company_name, full_name, logo_url, city, phone_number, address, user.email, company.company_name, company.logo_url, etc.
 - **Store**: `src/features/editor/store/use-customer-data-store.ts` manages customer data state
+- **Lock Fields**: Toggle lock on fields to prevent customers from editing certain placeholders
 - **Usage**: Templates with placeholders can be exported as JSON and rendered for thousands of customers
+
+## Template Gallery System
+- **Save Template**: Click "Save" button in navbar to save template with dynamic fields
+- **Template Gallery**: Visit `/templates` to view all saved templates
+- **Public Template Page**: `/template/[id]/public` shows:
+  - Left side: Video preview with Remotion Player
+  - Right side: Form with dynamic fields for customer data entry
+  - Support for text, image, video, audio uploads
+  - Locked fields are disabled and cannot be edited by customers
+  - Download customized template JSON
+
+## Key Files for Template System
+- `src/utils/template-storage.ts` - Template CRUD operations and field extraction
+- `src/app/templates/page.tsx` - Template gallery page
+- `src/app/template/[id]/public/page.tsx` - Public template customization page
+- `src/app/template/[id]/public/preview-composition.tsx` - Remotion preview component
 
 ## Categories System
 Template categories for organization:
