@@ -22,27 +22,35 @@ A React-based video editor using Next.js 15, Remotion for video rendering, and t
 
 ## Customer Data Template System
 The editor supports dynamic customer data insertion for bulk template rendering:
-- **Customer Data Menu**: Insert dynamic text and image fields using `{{path}}` placeholders
+- **Field Metadata**: Each track item can have metadata: `isCustomerField`, `isLocked`, `fieldPath`, `fieldLabel`, `defaultValue`
+- **CustomerFieldSettings**: Inline dropdown in editor controls to configure customer field properties
 - **Supported Fields**: customer_company_name, full_name, logo_url, city, phone_number, address, user.email, company.company_name, company.logo_url, etc.
+- **Field Logic**:
+  - `isCustomerField=true`: Always editable by customers
+  - `isCustomerField=false, isLocked=false`: Editable but not customer-defined
+  - `isCustomerField=false, isLocked=true`: Uses template default, not editable
 - **Store**: `src/features/editor/store/use-customer-data-store.ts` manages customer data state
-- **Lock Fields**: Toggle lock on fields to prevent customers from editing certain placeholders
-- **Usage**: Templates with placeholders can be exported as JSON and rendered for thousands of customers
+- **Usage**: Templates with metadata are saved and fields are extracted at runtime
 
 ## Template Gallery System
-- **Save Template**: Click "Save" button in navbar to save template with dynamic fields
-- **Template Gallery**: Visit `/templates` to view all saved templates
+- **Save Template**: Click "Save" button in navbar to save template with metadata
+- **Template Gallery**: Visit `/templates` to view all saved templates with Edit buttons
+- **Edit Template**: `/template/[id]/edit` - Reopen saved templates in the editor
 - **Public Template Page**: `/template/[id]/public` shows:
   - Left side: Video preview with Remotion Player
-  - Right side: Form with dynamic fields for customer data entry
+  - Right side: Form with customer fields (extracted from metadata)
   - Support for text, image, video, audio uploads
   - Locked fields are disabled and cannot be edited by customers
+  - Download buttons for images and videos in preview mode
   - Download customized template JSON
 
 ## Key Files for Template System
-- `src/utils/template-storage.ts` - Template CRUD operations and field extraction
-- `src/app/templates/page.tsx` - Template gallery page
-- `src/app/template/[id]/public/page.tsx` - Public template customization page
+- `src/utils/template-storage.ts` - Template CRUD operations and metadata-based field extraction
+- `src/app/templates/page.tsx` - Template gallery page with Edit buttons
+- `src/app/template/[id]/public/page.tsx` - Public template customization page with downloads
+- `src/app/template/[id]/edit/page.tsx` - Template edit mode page
 - `src/app/template/[id]/public/preview-composition.tsx` - Remotion preview component
+- `src/features/editor/control-item/common/customer-field-settings.tsx` - Inline field configuration
 
 ## Categories System
 Template categories for organization:
