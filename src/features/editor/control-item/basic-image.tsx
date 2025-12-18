@@ -15,6 +15,7 @@ import Brightness from "./common/brightness";
 import useLayoutStore from "../store/use-layout-store";
 import { Label } from "@/components/ui/label";
 import { Animations } from "./common/animations";
+import { CustomerFieldSettings } from "./common/customer-field-settings";
 
 const BasicImage = ({
   trackItem,
@@ -178,6 +179,16 @@ const BasicImage = ({
   };
 
   const components = [
+    {
+      key: "customerField",
+      component: (
+        <CustomerFieldSettings
+          trackItemId={trackItem.id}
+          type="image"
+          metadata={trackItem.metadata as any}
+        />
+      )
+    },
     {
       key: "crop",
       component: (

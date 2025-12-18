@@ -12,6 +12,7 @@ import { ICompactFont, IFont } from "../interfaces/editor";
 import { DEFAULT_FONT } from "../constants/font";
 import { PresetText } from "./common/preset-text";
 import { Animations } from "./common/animations";
+import { CustomerFieldSettings } from "./common/customer-field-settings";
 
 interface ITextControlProps {
   color: string;
@@ -336,6 +337,16 @@ const BasicText = ({
   };
 
   const components = [
+    {
+      key: "customerField",
+      component: (
+        <CustomerFieldSettings
+          trackItemId={trackItem.id}
+          type="text"
+          metadata={trackItem.metadata as any}
+        />
+      )
+    },
     {
       key: "textPreset",
       component: <PresetText trackItem={trackItem} properties={properties} />

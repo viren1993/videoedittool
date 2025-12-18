@@ -15,6 +15,7 @@ import Speed from "./common/speed";
 import useLayoutStore from "../store/use-layout-store";
 import { Label } from "@/components/ui/label";
 import { Animations } from "./common/animations";
+import { CustomerFieldSettings } from "./common/customer-field-settings";
 
 const BasicVideo = ({
   trackItem,
@@ -175,6 +176,16 @@ const BasicVideo = ({
   };
 
   const components = [
+    {
+      key: "customerField",
+      component: (
+        <CustomerFieldSettings
+          trackItemId={trackItem.id}
+          type="video"
+          metadata={trackItem.metadata as any}
+        />
+      )
+    },
     {
       key: "crop",
       component: (

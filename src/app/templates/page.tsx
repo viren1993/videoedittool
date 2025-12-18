@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { getTemplates, deleteTemplate, type SavedTemplate } from "@/utils/template-storage";
-import { Trash2, ExternalLink, Video, Plus } from "lucide-react";
+import { getTemplates, deleteTemplate, extractFieldsFromMetadata, type SavedTemplate } from "@/utils/template-storage";
+import { Trash2, ExternalLink, Video, Plus, Pencil } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -89,13 +89,19 @@ export default function TemplatesPage() {
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-3">
-                    {template.dynamicFields.length} dynamic field{template.dynamicFields.length !== 1 ? "s" : ""}
+                    {extractFieldsFromMetadata(template.templateData).filter(f => f.metadata.isCustomerField).length} customer field(s)
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Created {formatDate(template.createdAt)}
                   </p>
                 </CardContent>
                 <CardFooter className="flex gap-2">
+                  <Link href={`/template/${template.id}/edit`} className="flex-1">
+                    <Button variant="outline" className="w-full">
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                  </Link>
                   <Link href={`/template/${template.id}/public`} className="flex-1">
                     <Button variant="default" className="w-full">
                       <ExternalLink className="h-4 w-4 mr-2" />

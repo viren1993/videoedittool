@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { dispatch } from "@designcombo/events";
 import { EDIT_OBJECT, LAYER_REPLACE } from "@designcombo/state";
 import { Button } from "@/components/ui/button";
+import { CustomerFieldSettings } from "./common/customer-field-settings";
 
 const BasicAudio = ({
   trackItem,
@@ -57,6 +58,16 @@ const BasicAudio = ({
   };
 
   const components = [
+    {
+      key: "customerField",
+      component: (
+        <CustomerFieldSettings
+          trackItemId={trackItem.id}
+          type="audio"
+          metadata={trackItem.metadata as any}
+        />
+      )
+    },
     {
       key: "speed",
       component: (

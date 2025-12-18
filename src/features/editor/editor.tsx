@@ -38,7 +38,7 @@ const stateManager = new StateManager({
   },
 });
 
-const Editor = ({ tempId, id }: { tempId?: string; id?: string }) => {
+const Editor = ({ tempId, id, initialDesign }: { tempId?: string; id?: string; initialDesign?: any }) => {
   const [projectName, setProjectName] = useState<string>("Untitled video");
   const timelinePanelRef = useRef<ImperativePanelHandle>(null);
   const sceneRef = useRef<SceneRef>(null);
@@ -131,6 +131,9 @@ const Editor = ({ tempId, id }: { tempId?: string; id?: string }) => {
 
   useEffect(() => {
     setLoaded(true);
+    if (initialDesign) {
+      dispatch(DESIGN_LOAD, { payload: initialDesign });
+    }
   }, []);
 
   return (

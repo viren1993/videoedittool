@@ -9,10 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   getTemplate,
-  applyDynamicData,
+  extractFieldsFromMetadata,
+  applyFieldValues,
   type SavedTemplate,
-  type DynamicField,
+  type TrackItemField,
 } from "@/utils/template-storage";
 import {
   ArrowLeft,
@@ -23,6 +31,8 @@ import {
   Type,
   Lock,
   Upload,
+  FileVideo,
+  FileImage,
 } from "lucide-react";
 import Link from "next/link";
 import { useDropzone } from "react-dropzone";
@@ -30,12 +40,42 @@ import { useDropzone } from "react-dropzone";
 import { Player as RemotionPlayer, PlayerRef } from "@remotion/player";
 import PreviewComposition from "./preview-composition";
 
+const CUSTOMER_DATA_OPTIONS = {
+  text: [
+    { value: "customer_company_name", label: "Customer Company Name" },
+    { value: "full_name", label: "Full Name" },
+    { value: "city", label: "City" },
+    { value: "phone_number", label: "Phone Number" },
+    { value: "telephone_number", label: "Telephone Number" },
+    { value: "address", label: "Address" },
+    { value: "user.email", label: "User Email" },
+    { value: "user.username", label: "Username" },
+    { value: "company.company_name", label: "Company Name" },
+    { value: "company.description", label: "Company Description" },
+    { value: "company.mobile", label: "Company Mobile" },
+    { value: "company.email", label: "Company Email" },
+  ],
+  image: [
+    { value: "logo_url", label: "Logo URL" },
+    { value: "company.logo_url", label: "Company Logo" },
+  ],
+  video: [
+    { value: "background_video", label: "Background Video" },
+    { value: "intro_video", label: "Intro Video" },
+  ],
+  audio: [
+    { value: "background_music", label: "Background Music" },
+    { value: "voiceover", label: "Voiceover" },
+  ],
+};
+
 export default function PublicTemplatePage() {
   const params = useParams();
   const router = useRouter();
   const playerRef = useRef<PlayerRef>(null);
   const [template, setTemplate] = useState<SavedTemplate | null>(null);
-  const [fields, setFields] = useState<DynamicField[]>([]);
+  const [fields, setFields] = useState<TrackItemField[]>([]);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [previewData, setPreviewData] = useState<any>(null);
 
@@ -44,34 +84,49 @@ export default function PublicTemplatePage() {
     const loadedTemplate = getTemplate(id);
     if (loadedTemplate) {
       setTemplate(loadedTemplate);
-      setFields(loadedTemplate.dynamicFields.map((f) => ({ ...f })));
+      const extractedFields = extractFieldsFromMetadata(loadedTemplate.templateData);
+      const editableFields = extractedFields.filter(f => {
+        if (f.metadata.isCustomerField) return true;
+        if (!f.metadata.isLocked) return true;
+        return false;
+      });
+      setFields(editableFields);
+      
+      const initialValues: Record<string, string> = {};
+      editableFields.forEach(f => {
+        if (f.metadata.defaultValue) {
+          initialValues[f.trackItemId] = f.metadata.defaultValue;
+        }
+      });
+      setFieldValues(initialValues);
       setPreviewData(loadedTemplate.templateData);
     }
     setLoading(false);
   }, [params.id]);
 
-  const updateField = (fieldId: string, value: string) => {
-    setFields((prev) =>
-      prev.map((f) => (f.id === fieldId ? { ...f, value } : f))
-    );
+  const updateFieldValue = (trackItemId: string, value: string) => {
+    setFieldValues(prev => ({
+      ...prev,
+      [trackItemId]: value,
+    }));
   };
 
-  const handleFileUpload = (fieldId: string, file: File) => {
+  const handleFileUpload = (trackItemId: string, file: File) => {
     const url = URL.createObjectURL(file);
-    updateField(fieldId, url);
+    updateFieldValue(trackItemId, url);
   };
 
   const updatePreview = useCallback(() => {
     if (!template) return;
-    const updatedData = applyDynamicData(template.templateData, fields);
+    const updatedData = applyFieldValues(template.templateData, fieldValues);
     setPreviewData(updatedData);
-  }, [template, fields]);
+  }, [template, fieldValues]);
 
   useEffect(() => {
     updatePreview();
-  }, [fields, updatePreview]);
+  }, [fieldValues, updatePreview]);
 
-  const handleDownload = () => {
+  const handleDownloadJSON = () => {
     if (!template || !previewData) return;
     const blob = new Blob([JSON.stringify(previewData, null, 2)], {
       type: "application/json",
@@ -82,6 +137,29 @@ export default function PublicTemplatePage() {
     a.download = `${template.name}-customized.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadMedia = async (src: string, type: "image" | "video", filename: string) => {
+    try {
+      if (!src) {
+        console.error("No source provided for download");
+        return;
+      }
+      const response = await fetch(src);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.style.display = "none";
+      const extension = type === "image" ? "png" : "mp4";
+      a.download = `${filename}.${extension}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
   };
 
   if (loading) {
@@ -103,8 +181,10 @@ export default function PublicTemplatePage() {
     );
   }
 
-  const textFields = fields.filter((f) => f.type === "text");
-  const mediaFields = fields.filter((f) => f.type !== "text");
+  const customerFields = fields.filter(f => f.metadata.isCustomerField);
+  const editableFields = fields.filter(f => !f.metadata.isCustomerField && !f.metadata.isLocked);
+  const textFields = customerFields.filter(f => f.type === "text");
+  const mediaFields = customerFields.filter(f => f.type !== "text");
 
   return (
     <div className="min-h-screen bg-background">
@@ -129,10 +209,12 @@ export default function PublicTemplatePage() {
               </div>
             </div>
           </div>
-          <Button onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-2" />
-            Download Template
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleDownloadJSON}>
+              <Download className="h-4 w-4 mr-2" />
+              Download JSON
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -141,9 +223,40 @@ export default function PublicTemplatePage() {
           <div className="order-2 lg:order-1">
             <Card className="h-full">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Video className="h-5 w-5" />
-                  Preview
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Video className="h-5 w-5" />
+                    Preview
+                  </span>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleDownloadMedia(
+                        previewData?.trackItemsMap?.[Object.keys(previewData?.trackItemsMap || {})[0]]?.details?.src || "",
+                        "image",
+                        `${template.name}-frame`
+                      )}
+                    >
+                      <FileImage className="h-4 w-4 mr-1" />
+                      Image
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        const videoItem = Object.values(previewData?.trackItemsMap || {}).find(
+                          (item: any) => item.type === "video"
+                        ) as any;
+                        if (videoItem?.details?.src) {
+                          handleDownloadMedia(videoItem.details.src, "video", `${template.name}-video`);
+                        }
+                      }}
+                    >
+                      <FileVideo className="h-4 w-4 mr-1" />
+                      Video
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -188,43 +301,68 @@ export default function PublicTemplatePage() {
               <CardHeader>
                 <CardTitle>Customize Your Template</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Fill in the fields below to personalize your video
+                  Fill in your customer data to personalize your video
                 </p>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[calc(70vh-100px)]">
                   <div className="space-y-6 pr-4">
-                    {textFields.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                          <Type className="h-4 w-4" />
-                          Text Fields
-                        </h3>
-                        <div className="space-y-4">
-                          {textFields.map((field) => (
-                            <FieldInput
-                              key={field.id}
-                              field={field}
-                              onUpdate={updateField}
-                              onFileUpload={handleFileUpload}
-                            />
-                          ))}
-                        </div>
-                      </div>
+                    {customerFields.length > 0 && (
+                      <>
+                        {textFields.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                              <Type className="h-4 w-4" />
+                              Customer Text Fields
+                            </h3>
+                            <div className="space-y-4">
+                              {textFields.map((field) => (
+                                <CustomerFieldInput
+                                  key={field.id}
+                                  field={field}
+                                  value={fieldValues[field.trackItemId] || ""}
+                                  onUpdate={updateFieldValue}
+                                  onFileUpload={handleFileUpload}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {mediaFields.length > 0 && (
+                          <div>
+                            <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                              <ImageIcon className="h-4 w-4" />
+                              Customer Media Fields
+                            </h3>
+                            <div className="space-y-4">
+                              {mediaFields.map((field) => (
+                                <CustomerFieldInput
+                                  key={field.id}
+                                  field={field}
+                                  value={fieldValues[field.trackItemId] || ""}
+                                  onUpdate={updateFieldValue}
+                                  onFileUpload={handleFileUpload}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
 
-                    {mediaFields.length > 0 && (
+                    {editableFields.length > 0 && (
                       <div>
                         <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                          <ImageIcon className="h-4 w-4" />
-                          Media Fields
+                          Additional Editable Fields
                         </h3>
                         <div className="space-y-4">
-                          {mediaFields.map((field) => (
-                            <FieldInput
+                          {editableFields.map((field) => (
+                            <CustomerFieldInput
                               key={field.id}
                               field={field}
-                              onUpdate={updateField}
+                              value={fieldValues[field.trackItemId] || ""}
+                              onUpdate={updateFieldValue}
                               onFileUpload={handleFileUpload}
                             />
                           ))}
@@ -248,20 +386,21 @@ export default function PublicTemplatePage() {
   );
 }
 
-interface FieldInputProps {
-  field: DynamicField;
-  onUpdate: (fieldId: string, value: string) => void;
-  onFileUpload: (fieldId: string, file: File) => void;
+interface CustomerFieldInputProps {
+  field: TrackItemField;
+  value: string;
+  onUpdate: (trackItemId: string, value: string) => void;
+  onFileUpload: (trackItemId: string, file: File) => void;
 }
 
-function FieldInput({ field, onUpdate, onFileUpload }: FieldInputProps) {
+function CustomerFieldInput({ field, value, onUpdate, onFileUpload }: CustomerFieldInputProps) {
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
-        onFileUpload(field.id, acceptedFiles[0]);
+        onFileUpload(field.trackItemId, acceptedFiles[0]);
       }
     },
-    [field.id, onFileUpload]
+    [field.trackItemId, onFileUpload]
   );
 
   const acceptMap: Record<string, Record<string, string[]>> = {
@@ -275,7 +414,7 @@ function FieldInput({ field, onUpdate, onFileUpload }: FieldInputProps) {
     onDrop,
     accept,
     multiple: false,
-    disabled: field.isLocked,
+    disabled: field.metadata.isLocked,
   });
 
   const getIcon = () => {
@@ -296,15 +435,21 @@ function FieldInput({ field, onUpdate, onFileUpload }: FieldInputProps) {
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
           {getIcon()}
-          {field.label}
-          {field.isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
+          {field.metadata.fieldLabel}
+          {field.metadata.isCustomerField && (
+            <Badge variant="secondary" className="text-xs">Customer</Badge>
+          )}
+          {field.metadata.isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
         </Label>
         <Input
-          placeholder={`Enter ${field.label.toLowerCase()}`}
-          value={field.value}
-          onChange={(e) => onUpdate(field.id, e.target.value)}
-          disabled={field.isLocked}
+          placeholder={field.metadata.placeholder || `Enter ${field.metadata.fieldLabel.toLowerCase()}`}
+          value={value}
+          onChange={(e) => onUpdate(field.trackItemId, e.target.value)}
+          disabled={field.metadata.isLocked}
         />
+        {field.metadata.description && (
+          <p className="text-xs text-muted-foreground">{field.metadata.description}</p>
+        )}
       </div>
     );
   }
@@ -313,8 +458,11 @@ function FieldInput({ field, onUpdate, onFileUpload }: FieldInputProps) {
     <div className="space-y-2">
       <Label className="flex items-center gap-2">
         {getIcon()}
-        {field.label}
-        {field.isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
+        {field.metadata.fieldLabel}
+        {field.metadata.isCustomerField && (
+          <Badge variant="secondary" className="text-xs">Customer</Badge>
+        )}
+        {field.metadata.isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
       </Label>
       <div
         {...getRootProps()}
@@ -322,27 +470,27 @@ function FieldInput({ field, onUpdate, onFileUpload }: FieldInputProps) {
           isDragActive
             ? "border-primary bg-primary/5"
             : "border-muted-foreground/25 hover:border-primary/50"
-        } ${field.isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
+        } ${field.metadata.isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         <input {...getInputProps()} />
-        {field.value ? (
+        {value ? (
           <div className="space-y-2">
             {field.type === "image" && (
               <img
-                src={field.value}
-                alt={field.label}
+                src={value}
+                alt={field.metadata.fieldLabel}
                 className="max-h-32 mx-auto rounded"
               />
             )}
             {field.type === "video" && (
               <video
-                src={field.value}
+                src={value}
                 className="max-h-32 mx-auto rounded"
                 controls
               />
             )}
             {field.type === "audio" && (
-              <audio src={field.value} controls className="w-full" />
+              <audio src={value} controls className="w-full" />
             )}
             <p className="text-xs text-muted-foreground">
               Click or drag to replace
@@ -359,6 +507,9 @@ function FieldInput({ field, onUpdate, onFileUpload }: FieldInputProps) {
           </div>
         )}
       </div>
+      {field.metadata.description && (
+        <p className="text-xs text-muted-foreground">{field.metadata.description}</p>
+      )}
     </div>
   );
 }

@@ -1,14 +1,33 @@
 import { nanoid } from "nanoid";
 
-export interface DynamicField {
-  id: string;
-  path: string;
-  label: string;
-  type: "text" | "image" | "video" | "audio";
-  placeholder: string;
-  value: string;
+export interface FieldMetadata {
+  isCustomerField: boolean;
+  fieldPath: string;
+  fieldLabel: string;
   isLocked: boolean;
+  dataType: "text" | "image" | "video" | "audio";
+  placeholder?: string;
+  defaultValue?: string;
+  currentValue?: string;
+  description?: string;
+  acceptedFormats?: string[];
+  maxSize?: number;
+  previewUrl?: string;
+  validation?: {
+    type?: string;
+    minLength?: number;
+    maxLength?: number;
+    required?: boolean;
+  };
+}
+
+export interface TrackItemField {
+  id: string;
   trackItemId: string;
+  type: "text" | "image" | "video" | "audio";
+  metadata: FieldMetadata;
+  currentSrc?: string;
+  currentText?: string;
 }
 
 export interface SavedTemplate {
@@ -19,7 +38,7 @@ export interface SavedTemplate {
   createdAt: string;
   updatedAt: string;
   templateData: any;
-  dynamicFields: DynamicField[];
+  isPrivate?: boolean;
   thumbnail?: string;
 }
 
@@ -77,84 +96,117 @@ export function deleteTemplate(id: string): boolean {
   return true;
 }
 
-export function extractDynamicFields(templateData: any): DynamicField[] {
-  const fields: DynamicField[] = [];
+export function extractFieldsFromMetadata(templateData: any): TrackItemField[] {
+  const fields: TrackItemField[] = [];
   const trackItemsMap = templateData.trackItemsMap || {};
   
   for (const [itemId, item] of Object.entries(trackItemsMap)) {
     const trackItem = item as any;
+    const originalMetadata = trackItem.metadata as FieldMetadata | undefined;
     
-    if (trackItem.type === "text" && trackItem.details?.text) {
-      const text = trackItem.details.text;
-      const placeholderMatch = text.match(/\{\{([^}]+)\}\}/g);
-      
-      if (placeholderMatch) {
-        for (const match of placeholderMatch) {
-          const path = match.replace(/\{\{|\}\}/g, "");
-          fields.push({
-            id: nanoid(),
-            path,
-            label: formatFieldLabel(path),
-            type: "text",
-            placeholder: text,
-            value: "",
-            isLocked: trackItem.metadata?.isLocked || false,
-            trackItemId: itemId,
-          });
-        }
-      }
-    }
+    if (!originalMetadata || !originalMetadata.fieldPath) continue;
     
-    if ((trackItem.type === "image" || trackItem.type === "video" || trackItem.type === "audio") && trackItem.details?.src) {
-      const src = trackItem.details.src;
-      const placeholderMatch = src.match(/\{\{([^}]+)\}\}/);
-      
-      if (placeholderMatch) {
-        const path = placeholderMatch[1];
-        fields.push({
-          id: nanoid(),
-          path,
-          label: formatFieldLabel(path),
-          type: trackItem.type as "image" | "video" | "audio",
-          placeholder: src,
-          value: "",
-          isLocked: trackItem.metadata?.isLocked || false,
-          trackItemId: itemId,
-        });
-      }
-    }
+    const clonedMetadata: FieldMetadata = {
+      ...originalMetadata,
+      isLocked: originalMetadata.isCustomerField ? false : (originalMetadata.isLocked ?? false),
+    };
+    
+    const field: TrackItemField = {
+      id: nanoid(),
+      trackItemId: itemId,
+      type: clonedMetadata.dataType || trackItem.type,
+      metadata: clonedMetadata,
+      currentSrc: trackItem.details?.src,
+      currentText: trackItem.details?.text,
+    };
+    
+    fields.push(field);
   }
   
   return fields;
 }
 
-function formatFieldLabel(path: string): string {
+export function getEditableFields(templateData: any): TrackItemField[] {
+  const allFields = extractFieldsFromMetadata(templateData);
+  return allFields.filter(f => !f.metadata.isLocked);
+}
+
+export function getCustomerFields(templateData: any): TrackItemField[] {
+  const allFields = extractFieldsFromMetadata(templateData);
+  return allFields.filter(f => f.metadata.isCustomerField);
+}
+
+export function applyFieldValues(templateData: any, fieldValues: Record<string, string>): any {
+  const newData = JSON.parse(JSON.stringify(templateData));
+  const trackItemsMap = newData.trackItemsMap || {};
+  
+  for (const [trackItemId, value] of Object.entries(fieldValues)) {
+    const trackItem = trackItemsMap[trackItemId];
+    if (!trackItem) continue;
+    
+    const metadata = trackItem.metadata as FieldMetadata | undefined;
+    if (!metadata) continue;
+    
+    if (metadata.isLocked && !metadata.isCustomerField) {
+      continue;
+    }
+    
+    if (metadata.dataType === "text" && trackItem.details?.text !== undefined) {
+      trackItem.details.text = value;
+      if (metadata) {
+        metadata.currentValue = value;
+      }
+    }
+    
+    if ((metadata.dataType === "image" || metadata.dataType === "video" || metadata.dataType === "audio") && trackItem.details?.src !== undefined) {
+      trackItem.details.src = value;
+      if (metadata) {
+        metadata.currentValue = value;
+      }
+    }
+  }
+  
+  return newData;
+}
+
+export function formatFieldLabel(path: string): string {
   return path
     .split(/[._]/)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
-export function applyDynamicData(templateData: any, fields: DynamicField[]): any {
+export function createDefaultMetadata(type: "text" | "image" | "video" | "audio", fieldPath: string): FieldMetadata {
+  return {
+    isCustomerField: false,
+    fieldPath,
+    fieldLabel: formatFieldLabel(fieldPath),
+    isLocked: false,
+    dataType: type,
+    placeholder: `Enter ${formatFieldLabel(fieldPath).toLowerCase()}`,
+    defaultValue: "",
+    currentValue: "",
+  };
+}
+
+export function updateTrackItemMetadata(
+  templateData: any, 
+  trackItemId: string, 
+  metadataUpdates: Partial<FieldMetadata>
+): any {
   const newData = JSON.parse(JSON.stringify(templateData));
-  const trackItemsMap = newData.trackItemsMap || {};
+  const trackItem = newData.trackItemsMap?.[trackItemId];
   
-  for (const field of fields) {
-    if (!field.value) continue;
-    
-    const trackItem = trackItemsMap[field.trackItemId];
-    if (!trackItem) continue;
-    
-    if (field.type === "text" && trackItem.details?.text) {
-      trackItem.details.text = trackItem.details.text.replace(
-        `{{${field.path}}}`,
-        field.value
-      );
-    }
-    
-    if ((field.type === "image" || field.type === "video" || field.type === "audio") && trackItem.details?.src) {
-      trackItem.details.src = field.value;
-    }
+  if (!trackItem) return newData;
+  
+  if (!trackItem.metadata) {
+    trackItem.metadata = {};
+  }
+  
+  Object.assign(trackItem.metadata, metadataUpdates);
+  
+  if (trackItem.metadata.isCustomerField) {
+    trackItem.metadata.isLocked = false;
   }
   
   return newData;

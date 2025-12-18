@@ -33,7 +33,7 @@ import {
 } from "@/hooks/use-media-query";
 
 import Link from "next/link";
-import { saveTemplate, extractDynamicFields } from "@/utils/template-storage";
+import { saveTemplate, extractFieldsFromMetadata } from "@/utils/template-storage";
 import { toast } from "sonner";
 import { categories } from "@/data/categories";
 
@@ -94,7 +94,8 @@ export default function Navbar({
       ...stateManager.toJSON(),
     };
 
-    const dynamicFields = extractDynamicFields(data);
+    const fields = extractFieldsFromMetadata(data);
+    const customerFields = fields.filter(f => f.metadata.isCustomerField);
     const size = data.size || { width: 1080, height: 1920 };
     const aspectRatio = getAspectRatioLabel(size.width, size.height);
 
@@ -103,11 +104,10 @@ export default function Navbar({
       category: category || undefined,
       aspectRatio,
       templateData: data,
-      dynamicFields,
     });
 
     toast.success("Template saved successfully!", {
-      description: `${template.name} with ${dynamicFields.length} dynamic fields`,
+      description: `${template.name} with ${customerFields.length} customer fields`,
     });
   };
   return (
