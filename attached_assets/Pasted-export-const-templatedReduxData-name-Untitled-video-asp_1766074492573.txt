@@ -1,0 +1,226 @@
+export const templatedReduxData = [
+  {
+    name: "Untitled video",
+    aspectRatio: "9:16",
+    isPrivate: false, // true for private templates, false for public
+    templateData: {
+      id: "b3RIBuJycPjH7TCI",
+      fps: 30,
+      tracks: [
+        // ... tracks remain same ...
+      ],
+      size: {
+        width: 1080,
+        height: 1920,
+      },
+      trackItemIds: [
+        "YpwxCzg4fRzlamdb",
+        "WlR0PBJ75VWMvbuh",
+        "M2Go1UPj3tQ9ptSH",
+        "JLYHh8gbU9ZLvH",
+        "wQNKcaile8XfCm6kAz8UF",
+        "cYuzULGocMkSaMSYArpLI",
+        "Kh10xAS6r14iAK7RFyGNn",
+      ],
+      transitionsMap: {
+        // ... transitions remain same ...
+      },
+      trackItemsMap: {
+        Kh10xAS6r14iAK7RFyGNn: {
+          id: "Kh10xAS6r14iAK7RFyGNn",
+          name: "text",
+          type: "text",
+          display: {
+            from: 0,
+            to: 5000,
+          },
+          details: {
+            text: "Heading and some body",
+            // ... styling details remain same ...
+          },
+          metadata: {
+            isCustomerField: false,
+            fieldPath: "greeting_text",
+            fieldLabel: "Greeting Text",
+            isLocked: true,
+            dataType: "text",
+            placeholder: "Thank you for your business!",
+            defaultValue: "Heading and some body",
+            currentValue: "Heading and some body",
+            description: "This is a static greeting text that cannot be changed"
+          },
+          isMain: false,
+        },
+        YpwxCzg4fRzlamdb: {
+          id: "YpwxCzg4fRzlamdb",
+          type: "image",
+          name: "image",
+          display: {
+            from: 0,
+            to: 5000,
+          },
+          playbackRate: 1,
+          details: {
+            src: "blob:http://localhost:3000/c64f2f2e-19c1-4adb-ad53-98bc1509e435",
+            // ... other image details remain same ...
+          },
+          metadata: {
+            isCustomerField: false,
+            fieldPath: "background_image",
+            fieldLabel: "Background Image",
+            isLocked: false,
+            dataType: "image",
+            placeholder: "Upload background image",
+            defaultValue: "blob:http://localhost:3000/c64f2f2e-19c1-4adb-ad53-98bc1509e435",
+            currentValue: "blob:http://localhost:3000/c64f2f2e-19c1-4adb-ad53-98bc1509e435",
+            acceptedFormats: ["jpg", "png", "webp"],
+            maxSize: 5242880 // 5MB
+          },
+          isMain: false,
+        },
+        WlR0PBJ75VWMvbuh: {
+          id: "WlR0PBJ75VWMvbuh",
+          details: {
+            // ... video details remain same ...
+          },
+          metadata: {
+            isCustomerField: false,
+            fieldPath: "background_video",
+            fieldLabel: "Background Video",
+            isLocked: false,
+            dataType: "video",
+            placeholder: "Upload background video",
+            defaultValue: "blob:http://localhost:3000/94d3433e-fc9b-41d9-b408-715893f20f6c",
+            currentValue: "blob:http://localhost:3000/94d3433e-fc9b-41d9-b408-715893f20f6c",
+            acceptedFormats: ["mp4", "mov", "webm"],
+            maxSize: 10485760, // 10MB
+            previewUrl: "https://cdn.designcombo.dev/caption_previews/static_preset1.webp"
+          },
+          // ... other video properties remain same ...
+        },
+        M2Go1UPj3tQ9ptSH: {
+          id: "M2Go1UPj3tQ9ptSH",
+          name: "audio",
+          type: "audio",
+          display: {
+            from: 0,
+            to: 14042.553191489362,
+          },
+          // ... other audio properties remain same ...
+          details: {
+            src: "blob:http://localhost:3000/09061b00-ed21-4d88-bd4c-c43cb8b03dad",
+            volume: 100,
+          },
+          metadata: {
+            isCustomerField: false,
+            fieldPath: "background_music",
+            fieldLabel: "Background Music",
+            isLocked: false,
+            dataType: "audio",
+            placeholder: "Upload background music",
+            defaultValue: "blob:http://localhost:3000/09061b00-ed21-4d88-bd4c-c43cb8b03dad",
+            currentValue: "blob:http://localhost:3000/09061b00-ed21-4d88-bd4c-c43cb8b03dad",
+            acceptedFormats: ["mp3", "wav", "ogg"],
+            maxSize: 10485760 // 10MB
+          },
+          isMain: false,
+        },
+        JLYHh8gbU9ZLvH: {
+          id: "JLYHh8gbU9ZLvH",
+          type: "image",
+          name: "image",
+          display: {
+            from: 10000,
+            to: 13936.170212765957,
+          },
+          playbackRate: 1,
+          details: {
+            src: "blob:http://localhost:3000/b0b7a8d3-c294-48c8-9057-40e30b12ed06",
+            // ... other image details remain same ...
+          },
+          metadata: {
+            isCustomerField: true,
+            fieldPath: "logo_url",
+            fieldLabel: "Company Logo",
+            isLocked: false,
+            dataType: "image",
+            placeholder: "Upload company logo",
+            defaultValue: "navneet007/22a6fedd50fb442f92b269d7874e572f_EdgeKart.png",
+            currentValue: "blob:http://localhost:3000/b0b7a8d3-c294-48c8-9057-40e30b12ed06",
+            acceptedFormats: ["png", "jpg", "svg"],
+            maxSize: 2097152 // 2MB
+          },
+          isMain: false,
+        },
+        cYuzULGocMkSaMSYArpLI: {
+          id: "cYuzULGocMkSaMSYArpLI",
+          name: "text",
+          type: "text",
+          display: {
+            from: 5000,
+            to: 10000,
+          },
+          details: {
+            text: "{{customer_company_name}}",
+            // ... styling details remain same ...
+          },
+          metadata: {
+            isCustomerField: true,
+            fieldPath: "customer_company_name",
+            fieldLabel: "Customer Company Name",
+            isLocked: false,
+            dataType: "text",
+            placeholder: "Enter company name",
+            defaultValue: "parmar and sons",
+            currentValue: "{{customer_company_name}}",
+            validation: {
+              type: "text",
+              minLength: 2,
+              maxLength: 200,
+              required: true
+            }
+          },
+          isMain: false,
+        },
+        wQNKcaile8XfCm6kAz8UF: {
+          id: "wQNKcaile8XfCm6kAz8UF",
+          name: "text",
+          type: "text",
+          display: {
+            from: 10000,
+            to: 15000,
+          },
+          details: {
+            text: "{{city}}",
+            // ... styling details remain same ...
+          },
+          metadata: {
+            isCustomerField: true,
+            fieldPath: "city",
+            fieldLabel: "City",
+            isLocked: false,
+            dataType: "text",
+            placeholder: "Enter city name",
+            defaultValue: "Gujrati",
+            currentValue: "{{city}}",
+            validation: {
+              type: "text",
+              minLength: 2,
+              maxLength: 100,
+              required: true
+            }
+          },
+          isMain: false,
+        },
+      },
+      transitionIds: [
+        "Kh10xAS6r14iAK7RFyGNn-cYuzULGocMkSaMSYArpLI",
+        "cYuzULGocMkSaMSYArpLI-wQNKcaile8XfCm6kAz8UF",
+      ],
+    },
+    // dynamicFields removed - now handled in metadata
+    id: "XKaZwiNSnGvDf7Zb0RIle",
+    createdAt: "2025-12-18T16:01:28.247Z",
+    updatedAt: "2025-12-18T16:01:28.247Z",
+  },
+];
