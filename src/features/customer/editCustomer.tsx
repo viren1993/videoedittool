@@ -97,10 +97,9 @@ export default function EditCustomer({
       formData.append("status", data?.status || "active");
 
       if (formDataInput.logo_file && formDataInput.logo_file.length > 0) {
-        formData.append("logo_file", formDataInput.logo_file[0]);
+        formData.append("logo_url", formDataInput.logo_file[0]);
       } else if (!formDataInput.existing_logo_url) {
-        // If no existing logo and no new file, you might want to handle removal
-        formData.append("logo_file", ""); // Send empty to remove logo
+        formData.append("logo_url", ""); // Send empty to remove logo
       }
 
       const customerId = data?.id;
