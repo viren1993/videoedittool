@@ -13,8 +13,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import useUploadStore from "@/features/editor/store/use-upload-store";
 import { Input } from "./ui/input";
+import { MediaUploadResponse } from "@/types/media";
+import { toast } from "sonner";
+
 type ModalUploadProps = {
   type?: string;
+  onUploadComplete?: (media: MediaUploadResponse[]) => void;
 };
 
 export const extractVideoThumbnail = (file: File) => {
@@ -35,7 +39,7 @@ export const extractVideoThumbnail = (file: File) => {
     video.onerror = () => resolve("");
   });
 };
-const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
+const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all", onUploadComplete }) => {
   const {
     setShowUploadModal,
     showUploadModal,
@@ -51,6 +55,36 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const uploadMediaFiles = async (filesToUpload: File[]): Promise<MediaUploadResponse[]> => {
+    const uploadedMedias: MediaUploadResponse[] = [];
+    
+    for (const file of filesToUpload) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("company_id", "default_company");
+
+        const response = await fetch("/api/media/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Upload failed");
+        }
+
+        const media: MediaUploadResponse = await response.json();
+        uploadedMedias.push(media);
+        toast.success(`${file.name} uploaded successfully`);
+      } catch (error) {
+        toast.error(`Failed to upload ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`);
+      }
+    }
+
+    return uploadedMedias;
+  };
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
@@ -162,40 +196,64 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all" }) => {
     return result.upload;
   }
   const handleUpload = async () => {
-    // Prepare UploadFile objects for files
-    const fileUploads = files
-      .filter((f) => f.file?.type)
-      .map((f) => ({
-        id: f.id,
-        file: f.file,
-        type: f.file?.type,
-        status: "pending" as const,
-        progress: 0,
-      }));
+    setIsUploading(true);
+    try {
+      // Upload files directly through media upload API
+      const filesToUpload = files
+        .filter((f) => f.file?.type)
+        .map((f) => f.file as File);
 
-    // Prepare UploadFile object for URL if present
-    const urlUploads = videoUrl.trim()
-      ? [
-          {
-            id: crypto.randomUUID(),
-            url: videoUrl.trim(),
-            type: "url",
+      if (filesToUpload.length > 0) {
+        const uploadedMedias = await uploadMediaFiles(filesToUpload);
+        
+        // Call onUploadComplete callback if provided
+        if (onUploadComplete && uploadedMedias.length > 0) {
+          onUploadComplete(uploadedMedias);
+        }
+
+        // Also prepare for legacy upload store if needed
+        const fileUploads = files
+          .filter((f) => f.file?.type)
+          .map((f) => ({
+            id: f.id,
+            file: f.file,
+            type: f.file?.type,
             status: "pending" as const,
             progress: 0,
-          },
-        ]
-      : [];
+          }));
 
-    // Add to pending uploads
-    addPendingUploads([...fileUploads, ...urlUploads]);
+        // Prepare URL uploads if present
+        const urlUploads = videoUrl.trim()
+          ? [
+              {
+                id: crypto.randomUUID(),
+                url: videoUrl.trim(),
+                type: "url",
+                status: "pending" as const,
+                progress: 0,
+              },
+            ]
+          : [];
 
-    setTimeout(() => {
-      processUploads();
+        // Add to pending uploads for legacy system
+        if (fileUploads.length > 0 || urlUploads.length > 0) {
+          addPendingUploads([...fileUploads, ...urlUploads]);
+          setTimeout(() => {
+            processUploads();
+          }, 0);
+        }
+      }
+
       // Clear modal state and close
       setFiles([]);
       setShowUploadModal(false);
       setVideoUrl("");
-    }, 0);
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Upload process failed");
+    } finally {
+      setIsUploading(false);
+    }
   };
   const getAcceptType = () => {
     switch (type) {
