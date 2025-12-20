@@ -210,10 +210,10 @@ export const CustomerData = () => {
         name: field.label,
         details: {
           text: `{{${field.path}}}`,
-          fontSize: 48,
-          fontFamily: "Inter",
-          fontWeight: 400,
-          color: "#ffffff",
+          fontSize: 16,
+          // fontFamily: "Inter",
+          // fontWeight: 400,
+          // color: "#ffffff",
         },
         metadata: {
           isCustomerField: true,
@@ -229,6 +229,7 @@ export const CustomerData = () => {
   const handleAddImageField = (field: CustomerField) => {
     const id = generateId();
     const isLocked = lockedFields[field.key] || false;
+    console.log("Adding image field:", field, "Locked:", isLocked);
     dispatch(ADD_ITEMS, {
       payload: {
         trackItems: [
@@ -241,7 +242,7 @@ export const CustomerData = () => {
               to: 5000,
             },
             details: {
-              src: `{{${field.path}}}`,
+              src: field.value,
             },
             metadata: {
               isCustomerField: true,
@@ -259,7 +260,8 @@ export const CustomerData = () => {
     setCustomerData({
       customer_company_name: "parmar and sons",
       full_name: "navneet parmar",
-      logo_url: "navneet007/22a6fedd50fb442f92b269d7874e572f_EdgeKart.png",
+      logo_url:
+        "https://fastly.picsum.photos/id/12/2500/1667.jpg?hmac=Pe3284luVre9ZqNzv1jMFpLihFI6lwq7TPgMSsNXw2w",
       city: "Gujrati",
       phone_number: "1234657890",
       telephone_number: "1234567890",
@@ -273,7 +275,8 @@ export const CustomerData = () => {
         description:
           "We specialize in smart construction automation and site management systems.",
         mobile: "+91-1234567890",
-        logo_url: "logo.jpg",
+        logo_url:
+          "https://fastly.picsum.photos/id/12/2500/1667.jpg?hmac=Pe3284luVre9ZqNzv1jMFpLihFI6lwq7TPgMSsNXw2w",
         email: "info@telecom.com",
       },
     });
@@ -365,7 +368,6 @@ export const CustomerData = () => {
               );
             })}
           </div>
-
           <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide">
             Image Fields
           </div>
@@ -373,6 +375,7 @@ export const CustomerData = () => {
             {imageFields.map((field) => {
               const IconComponent = field.icon;
               const isLocked = lockedFields[field.key] || false;
+
               return (
                 <div key={field.key} className="flex items-center gap-2">
                   <Button
