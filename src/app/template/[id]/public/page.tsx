@@ -22,6 +22,7 @@ import {
   type SavedTemplate,
   type TrackItemField,
 } from "@/utils/template-storage";
+import { getTemplateFromAPI } from "@/utils/template-api";
 import {
   ArrowLeft,
   Download,
@@ -80,29 +81,144 @@ export default function PublicTemplatePage() {
   const [previewData, setPreviewData] = useState<any>(null);
 
   useEffect(() => {
-    const id = params.id as string;
-    const loadedTemplate = getTemplate(id);
-    if (loadedTemplate) {
-      setTemplate(loadedTemplate);
-      const extractedFields = extractFieldsFromMetadata(loadedTemplate.templateData);
-      const editableFields = extractedFields.filter(f => {
-        if (f.metadata.isCustomerField) return true;
-        if (!f.metadata.isLocked) return true;
-        return false;
-      });
-      setFields(editableFields);
+    const loadTemplate = async () => {
+      const id = params.id as string;
       
-      const initialValues: Record<string, string> = {};
-      editableFields.forEach(f => {
-        if (f.metadata.defaultValue) {
-          initialValues[f.trackItemId] = f.metadata.defaultValue;
+      try {
+        // Try to load from API first
+        const apiTemplate = await getTemplateFromAPI(id);
+        if (apiTemplate) {
+          // Transform API template to SavedTemplate format
+          const transformedTemplate: SavedTemplate = {
+            id: apiTemplate.id,
+            name: apiTemplate.template_name || apiTemplate.name,
+            category: apiTemplate.category,
+            aspectRatio: apiTemplate.aspectRatio || "16:9",
+            createdAt: apiTemplate.created_at || apiTemplate.createdAt,
+            updatedAt: apiTemplate.updated_at || apiTemplate.updatedAt,
+            templateData: apiTemplate.template_json || apiTemplate.templateData,
+            isPrivate: apiTemplate.isPrivate,
+            thumbnail: apiTemplate.thumbnail,
+          };
+          
+          // Replace blob URLs with permanent URLs from base URLs
+          const templateData = replaceBlobUrlsWithPermanentUrls(
+            transformedTemplate.templateData,
+            apiTemplate.base_video_url || [],
+            apiTemplate.base_image_url || [],
+            apiTemplate.base_audio_url || []
+          );
+          
+          transformedTemplate.templateData = templateData;
+          setTemplate(transformedTemplate);
+          
+          const extractedFields = extractFieldsFromMetadata(templateData);
+          const editableFields = extractedFields.filter(f => {
+            if (f.metadata.isCustomerField) return true;
+            if (!f.metadata.isLocked) return true;
+            return false;
+          });
+          setFields(editableFields);
+          
+          const initialValues: Record<string, string> = {};
+          editableFields.forEach(f => {
+            if (f.metadata.defaultValue) {
+              initialValues[f.trackItemId] = f.metadata.defaultValue;
+            }
+          });
+          setFieldValues(initialValues);
+          setPreviewData(templateData);
+        } else {
+          // Fallback to localStorage
+          const loadedTemplate = getTemplate(id);
+          if (loadedTemplate) {
+            setTemplate(loadedTemplate);
+            const extractedFields = extractFieldsFromMetadata(loadedTemplate.templateData);
+            const editableFields = extractedFields.filter(f => {
+              if (f.metadata.isCustomerField) return true;
+              if (!f.metadata.isLocked) return true;
+              return false;
+            });
+            setFields(editableFields);
+            
+            const initialValues: Record<string, string> = {};
+            editableFields.forEach(f => {
+              if (f.metadata.defaultValue) {
+                initialValues[f.trackItemId] = f.metadata.defaultValue;
+              }
+            });
+            setFieldValues(initialValues);
+            setPreviewData(loadedTemplate.templateData);
+          }
         }
-      });
-      setFieldValues(initialValues);
-      setPreviewData(loadedTemplate.templateData);
-    }
-    setLoading(false);
+      } catch (error) {
+        console.error("Error loading template:", error);
+        // Fallback to localStorage
+        const loadedTemplate = getTemplate(id);
+        if (loadedTemplate) {
+          setTemplate(loadedTemplate);
+          const extractedFields = extractFieldsFromMetadata(loadedTemplate.templateData);
+          const editableFields = extractedFields.filter(f => {
+            if (f.metadata.isCustomerField) return true;
+            if (!f.metadata.isLocked) return true;
+            return false;
+          });
+          setFields(editableFields);
+          
+          const initialValues: Record<string, string> = {};
+          editableFields.forEach(f => {
+            if (f.metadata.defaultValue) {
+              initialValues[f.trackItemId] = f.metadata.defaultValue;
+            }
+          });
+          setFieldValues(initialValues);
+          setPreviewData(loadedTemplate.templateData);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadTemplate();
   }, [params.id]);
+  
+  // Helper function to replace blob URLs with permanent URLs
+  const replaceBlobUrlsWithPermanentUrls = (
+    templateData: any,
+    baseVideoUrls: string[],
+    baseImageUrls: string[],
+    baseAudioUrls: string[]
+  ): any => {
+    const newData = JSON.parse(JSON.stringify(templateData));
+    const trackItemsMap = newData.trackItemsMap || {};
+    
+    let videoIndex = 0;
+    let imageIndex = 0;
+    let audioIndex = 0;
+    
+    for (const [itemId, item] of Object.entries(trackItemsMap)) {
+      const trackItem = item as any;
+      if (!trackItem.details?.src) continue;
+      
+      const src = trackItem.details.src;
+      const isBlob = src.startsWith("blob:");
+      
+      if (isBlob) {
+        if (trackItem.type === "video" && videoIndex < baseVideoUrls.length) {
+          trackItem.details.src = baseVideoUrls[videoIndex];
+          videoIndex++;
+        } else if (trackItem.type === "image" && imageIndex < baseImageUrls.length) {
+          trackItem.details.src = baseImageUrls[imageIndex];
+          imageIndex++;
+        } else if (trackItem.type === "audio" && audioIndex < baseAudioUrls.length) {
+          trackItem.details.src = baseAudioUrls[audioIndex];
+          audioIndex++;
+        }
+      }
+    }
+    
+    return newData;
+  };
 
   const updateFieldValue = (trackItemId: string, value: string) => {
     setFieldValues(prev => ({
@@ -159,6 +275,71 @@ export default function PublicTemplatePage() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Download failed:", error);
+    }
+  };
+
+  const handleDownloadVideo = async () => {
+    if (!previewData) return;
+    
+    try {
+      // Use the render API to generate the final video
+      const response = await fetch("/api/render", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          design: previewData,
+          options: {
+            fps: previewData.fps || 30,
+            size: previewData.size,
+            format: "mp4"
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to render video");
+      }
+
+      const jobInfo = await response.json();
+      const jobId = jobInfo.render.id;
+
+      // Poll for completion
+      let completed = false;
+      let downloadUrl = null;
+      
+      while (!completed) {
+        const statusResponse = await fetch(`/api/render?id=${jobId}`);
+        const statusData = await statusResponse.json();
+        
+        if (statusData.render.status === "completed") {
+          completed = true;
+          downloadUrl = statusData.render.output;
+        } else if (statusData.render.status === "failed") {
+          throw new Error("Video rendering failed");
+        } else {
+          // Wait before polling again
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+      if (downloadUrl) {
+        // Download the rendered video
+        const videoResponse = await fetch(downloadUrl);
+        const blob = await videoResponse.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${template?.name || "template"}-final.mp4`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error("Error downloading video:", error);
+      alert("Failed to download video. Please try again.");
     }
   };
 
@@ -232,29 +413,10 @@ export default function PublicTemplatePage() {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => handleDownloadMedia(
-                        previewData?.trackItemsMap?.[Object.keys(previewData?.trackItemsMap || {})[0]]?.details?.src || "",
-                        "image",
-                        `${template.name}-frame`
-                      )}
-                    >
-                      <FileImage className="h-4 w-4 mr-1" />
-                      Image
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => {
-                        const videoItem = Object.values(previewData?.trackItemsMap || {}).find(
-                          (item: any) => item.type === "video"
-                        ) as any;
-                        if (videoItem?.details?.src) {
-                          handleDownloadMedia(videoItem.details.src, "video", `${template.name}-video`);
-                        }
-                      }}
+                      onClick={handleDownloadVideo}
                     >
                       <FileVideo className="h-4 w-4 mr-1" />
-                      Video
+                      Download Video
                     </Button>
                   </div>
                 </CardTitle>

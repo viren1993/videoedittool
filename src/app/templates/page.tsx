@@ -4,16 +4,54 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTemplates, deleteTemplate, extractFieldsFromMetadata, type SavedTemplate } from "@/utils/template-storage";
-import { Trash2, ExternalLink, Video, Plus, Pencil } from "lucide-react";
+import { getTemplatesFromAPI } from "@/utils/template-api";
+import { Trash2, ExternalLink, Video, Plus, Pencil, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<SavedTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    setTemplates(getTemplates());
+    const fetchTemplates = async () => {
+      setLoading(true);
+      try {
+        // Try to fetch from API first
+        const apiTemplates = await getTemplatesFromAPI();
+        if (apiTemplates && apiTemplates.length > 0) {
+          // Transform API templates to SavedTemplate format
+          const transformedTemplates: SavedTemplate[] = apiTemplates.map((t: any) => ({
+            id: t.id,
+            name: t.template_name || t.name,
+            category: t.category,
+            aspectRatio: t.aspectRatio || "16:9",
+            createdAt: t.created_at || t.createdAt,
+            updatedAt: t.updated_at || t.updatedAt,
+            templateData: t.template_json || t.templateData,
+            isPrivate: t.isPrivate,
+            thumbnail: t.thumbnail,
+          }));
+          setTemplates(transformedTemplates);
+        } else {
+          // Fallback to localStorage
+          setTemplates(getTemplates());
+        }
+      } catch (error) {
+        console.error("Error fetching templates from API:", error);
+        // Fallback to localStorage on error
+        setTemplates(getTemplates());
+        toast.warning("Using local templates", {
+          description: "Could not fetch templates from server",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTemplates();
   }, []);
 
   const handleDelete = (id: string) => {
@@ -49,7 +87,12 @@ export default function TemplatesPage() {
           </Link>
         </div>
 
-        {templates.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-16">
+            <Loader2 className="h-16 w-16 mx-auto text-muted-foreground mb-4 animate-spin" />
+            <h2 className="text-xl font-semibold mb-2">Loading templates...</h2>
+          </div>
+        ) : templates.length === 0 ? (
           <div className="text-center py-16">
             <Video className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">No templates yet</h2>

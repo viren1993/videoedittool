@@ -36,21 +36,27 @@ import Link from "next/link";
 import { saveTemplate, extractFieldsFromMetadata } from "@/utils/template-storage";
 import { toast } from "sonner";
 import { categories } from "@/data/categories";
+import { transformToTemplateFormat, saveTemplateToAPI, updateTemplateToAPI } from "@/utils/template-api";
+import { useRouter } from "next/navigation";
 
 export default function Navbar({
   user,
   stateManager,
   setProjectName,
   projectName,
+  tempId,
 }: {
   user: any | null;
   stateManager: StateManager;
   setProjectName: (name: string) => void;
   projectName: string;
+  tempId?: string;
 }) {
   const [title, setTitle] = useState(projectName);
+  const [isSaving, setIsSaving] = useState(false);
   const isLargeScreen = useIsLargeScreen();
   const isSmallScreen = useIsSmallScreen();
+  const router = useRouter();
 
   const handleUndo = () => {
     dispatch(HISTORY_UNDO);
@@ -88,27 +94,57 @@ export default function Navbar({
     if (Math.abs(ratio - 4 / 5) < 0.1) return "4:5";
     return `${width}x${height}`;
   };
-  const handleSave = () => {
-    const data = {
-      id: generateId(),
-      ...stateManager.toJSON(),
-    };
+  const handleSave = async () => {
+    if (isSaving) return;
 
-    const fields = extractFieldsFromMetadata(data);
-    const customerFields = fields.filter(f => f.metadata.isCustomerField);
-    const size = data.size || { width: 1080, height: 1920 };
-    const aspectRatio = getAspectRatioLabel(size.width, size.height);
+    setIsSaving(true);
+    try {
+      const data = {
+        id: generateId(),
+        ...stateManager.toJSON(),
+      };
 
-    const template = saveTemplate({
-      name: projectName || "Untitled Template",
-      category: category || undefined,
-      aspectRatio,
-      templateData: data,
-    });
+      const fields = extractFieldsFromMetadata(data);
+      const customerFields = fields.filter(f => f.metadata.isCustomerField);
+      const size = data.size || { width: 1080, height: 1920 };
+      const aspectRatio = getAspectRatioLabel(size.width, size.height);
 
-    toast.success("Template saved successfully!", {
-      description: `${template.name} with ${customerFields.length} customer fields`,
-    });
+      // Transform to new template format and upload media
+      const templatePayload = await transformToTemplateFormat(
+        data,
+        projectName || "Untitled Template",
+        category || undefined
+      );
+
+      // Save to API - use PUT if editing existing template, POST for new
+      if (tempId) {
+        await updateTemplateToAPI(tempId, templatePayload);
+      } else {
+        await saveTemplateToAPI(templatePayload);
+      }
+
+      // Also save locally for backward compatibility
+      const template = saveTemplate({
+        name: projectName || "Untitled Template",
+        category: category || undefined,
+        aspectRatio,
+        templateData: data,
+      });
+
+      toast.success("Template saved successfully!", {
+        description: `${template.name} with ${customerFields.length} customer fields`,
+      });
+
+      // Redirect to templates page after successful save
+      router.push("/templates");
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast.error("Failed to save template", {
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
   return (
     <div
@@ -205,9 +241,10 @@ export default function Navbar({
             variant="outline"
             size={isSmallScreen ? "icon" : "sm"}
             onClick={handleSave}
+            disabled={isSaving}
           >
             <Save width={18} />
-            <span className="hidden md:block">Save</span>
+            <span className="hidden md:block">{isSaving ? "Saving..." : "Save"}</span>
           </Button>
           <DownloadPopover stateManager={stateManager} />
         </div>

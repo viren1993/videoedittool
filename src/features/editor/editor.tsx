@@ -144,6 +144,7 @@ const Editor = ({ tempId, id, initialDesign }: { tempId?: string; id?: string; i
         user={null}
         stateManager={stateManager}
         setProjectName={setProjectName}
+        tempId={tempId}
       />
       <div className="flex flex-1">
         {isLargeScreen && (

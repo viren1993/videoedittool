@@ -62,7 +62,9 @@ export default function PreviewComposition({ templateData }: Props) {
 
     if (type === "text") {
       const text = details.text || "";
-      const displayText = text.replace(/\{\{[^}]+\}\}/g, "");
+      // Don't remove template variables - they should already be replaced by applyFieldValues
+      // If they're still there, show them as-is (they'll be replaced by the field values)
+      const displayText = text;
       
       return (
         <div
@@ -77,6 +79,11 @@ export default function PreviewComposition({ templateData }: Props) {
             display: "flex",
             alignItems: "center",
             justifyContent: details.textAlign === "center" ? "center" : "flex-start",
+            wordWrap: details.wordWrap || "normal",
+            width: details.width || "auto",
+            height: details.height || "auto",
+            padding: "0",
+            margin: "0",
           }}
         >
           {displayText}
@@ -86,7 +93,7 @@ export default function PreviewComposition({ templateData }: Props) {
 
     if (type === "image") {
       const src = details.src || "";
-      if (src.startsWith("{{")) {
+      if (!src || src.startsWith("{{") || src === "") {
         return (
           <div
             key={id}
@@ -109,7 +116,7 @@ export default function PreviewComposition({ templateData }: Props) {
 
     if (type === "video") {
       const src = details.src || "";
-      if (src.startsWith("{{")) {
+      if (!src || src.startsWith("{{") || src === "") {
         return (
           <div
             key={id}
@@ -129,6 +136,7 @@ export default function PreviewComposition({ templateData }: Props) {
       }
       
       const startFrom = item.trim?.from ? Math.round((item.trim.from / 1000) * fps) : 0;
+      const endAt = item.trim?.to ? Math.round((item.trim.to / 1000) * fps) : undefined;
       
       return (
         <Video
@@ -137,6 +145,7 @@ export default function PreviewComposition({ templateData }: Props) {
           style={style}
           volume={(details.volume || 100) / 100}
           startFrom={startFrom}
+          endAt={endAt}
           playbackRate={item.playbackRate || 1}
         />
       );
