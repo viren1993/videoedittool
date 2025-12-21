@@ -23,6 +23,7 @@ import {
   type TrackItemField,
 } from "@/utils/template-storage";
 import { getTemplateFromAPI } from "@/utils/template-api";
+import { useSession } from "next-auth/react";
 import {
   ArrowLeft,
   Download,
@@ -79,70 +80,78 @@ export default function PublicTemplatePage() {
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [previewData, setPreviewData] = useState<any>(null);
+  const { data: session } = useSession();
 
   useEffect(() => {
     const loadTemplate = async () => {
       const id = params.id as string;
-      
+      const accessToken = session?.user?.access_token;
+
       try {
-        // Try to load from API first
-        const apiTemplate = await getTemplateFromAPI(id);
-        if (apiTemplate) {
-          // Transform API template to SavedTemplate format
-          const transformedTemplate: SavedTemplate = {
-            id: apiTemplate.id,
-            name: apiTemplate.template_name || apiTemplate.name,
-            category: apiTemplate.category,
-            aspectRatio: apiTemplate.aspectRatio || "16:9",
-            createdAt: apiTemplate.created_at || apiTemplate.createdAt,
-            updatedAt: apiTemplate.updated_at || apiTemplate.updatedAt,
-            templateData: apiTemplate.template_json || apiTemplate.templateData,
-            isPrivate: apiTemplate.isPrivate,
-            thumbnail: apiTemplate.thumbnail,
-          };
-          
-          // Replace blob URLs with permanent URLs from base URLs
-          const templateData = replaceBlobUrlsWithPermanentUrls(
-            transformedTemplate.templateData,
-            apiTemplate.base_video_url || [],
-            apiTemplate.base_image_url || [],
-            apiTemplate.base_audio_url || []
-          );
-          
-          transformedTemplate.templateData = templateData;
-          setTemplate(transformedTemplate);
-          
-          const extractedFields = extractFieldsFromMetadata(templateData);
-          const editableFields = extractedFields.filter(f => {
-            if (f.metadata.isCustomerField) return true;
-            if (!f.metadata.isLocked) return true;
-            return false;
-          });
-          setFields(editableFields);
-          
-          const initialValues: Record<string, string> = {};
-          editableFields.forEach(f => {
-            if (f.metadata.defaultValue) {
-              initialValues[f.trackItemId] = f.metadata.defaultValue;
-            }
-          });
-          setFieldValues(initialValues);
-          setPreviewData(templateData);
-        } else {
-          // Fallback to localStorage
-          const loadedTemplate = getTemplate(id);
-          if (loadedTemplate) {
-            setTemplate(loadedTemplate);
-            const extractedFields = extractFieldsFromMetadata(loadedTemplate.templateData);
-            const editableFields = extractedFields.filter(f => {
+        // Try to load from API first if we have access token
+        if (accessToken) {
+          const apiTemplate = await getTemplateFromAPI(id, accessToken);
+
+          if (apiTemplate) {
+            // Transform API template to SavedTemplate format
+            const transformedTemplate: SavedTemplate = {
+              id: apiTemplate.id,
+              name: apiTemplate.template_name || apiTemplate.name,
+              category: apiTemplate.category,
+              aspectRatio: apiTemplate.aspectRatio || "16:9",
+              createdAt: apiTemplate.created_at || apiTemplate.createdAt,
+              updatedAt: apiTemplate.updated_at || apiTemplate.updatedAt,
+              templateData:
+                apiTemplate.template_json || apiTemplate.templateData,
+              isPrivate: apiTemplate.isPrivate,
+              thumbnail: apiTemplate.thumbnail,
+            };
+
+            // Replace blob URLs with permanent URLs from base URLs
+            const templateData = replaceBlobUrlsWithPermanentUrls(
+              transformedTemplate.templateData,
+              apiTemplate.base_video_url || [],
+              apiTemplate.base_image_url || [],
+              apiTemplate.base_audio_url || []
+            );
+
+            transformedTemplate.templateData = templateData;
+            setTemplate(transformedTemplate);
+
+            const extractedFields = extractFieldsFromMetadata(templateData);
+            const editableFields = extractedFields.filter((f) => {
               if (f.metadata.isCustomerField) return true;
               if (!f.metadata.isLocked) return true;
               return false;
             });
             setFields(editableFields);
-            
+
             const initialValues: Record<string, string> = {};
-            editableFields.forEach(f => {
+            editableFields.forEach((f) => {
+              if (f.metadata.defaultValue) {
+                initialValues[f.trackItemId] = f.metadata.defaultValue;
+              }
+            });
+            setFieldValues(initialValues);
+            setPreviewData(templateData);
+          }
+        } else {
+          // Fallback to localStorage
+          const loadedTemplate = getTemplate(id);
+          if (loadedTemplate) {
+            setTemplate(loadedTemplate);
+            const extractedFields = extractFieldsFromMetadata(
+              loadedTemplate.templateData
+            );
+            const editableFields = extractedFields.filter((f) => {
+              if (f.metadata.isCustomerField) return true;
+              if (!f.metadata.isLocked) return true;
+              return false;
+            });
+            setFields(editableFields);
+
+            const initialValues: Record<string, string> = {};
+            editableFields.forEach((f) => {
               if (f.metadata.defaultValue) {
                 initialValues[f.trackItemId] = f.metadata.defaultValue;
               }
@@ -157,16 +166,18 @@ export default function PublicTemplatePage() {
         const loadedTemplate = getTemplate(id);
         if (loadedTemplate) {
           setTemplate(loadedTemplate);
-          const extractedFields = extractFieldsFromMetadata(loadedTemplate.templateData);
-          const editableFields = extractedFields.filter(f => {
+          const extractedFields = extractFieldsFromMetadata(
+            loadedTemplate.templateData
+          );
+          const editableFields = extractedFields.filter((f) => {
             if (f.metadata.isCustomerField) return true;
             if (!f.metadata.isLocked) return true;
             return false;
           });
           setFields(editableFields);
-          
+
           const initialValues: Record<string, string> = {};
-          editableFields.forEach(f => {
+          editableFields.forEach((f) => {
             if (f.metadata.defaultValue) {
               initialValues[f.trackItemId] = f.metadata.defaultValue;
             }
@@ -178,10 +189,10 @@ export default function PublicTemplatePage() {
         setLoading(false);
       }
     };
-    
+
     loadTemplate();
-  }, [params.id]);
-  
+  }, [params.id, session]);
+
   // Helper function to replace blob URLs with permanent URLs
   const replaceBlobUrlsWithPermanentUrls = (
     templateData: any,
@@ -191,37 +202,43 @@ export default function PublicTemplatePage() {
   ): any => {
     const newData = JSON.parse(JSON.stringify(templateData));
     const trackItemsMap = newData.trackItemsMap || {};
-    
+
     let videoIndex = 0;
     let imageIndex = 0;
     let audioIndex = 0;
-    
+
     for (const [itemId, item] of Object.entries(trackItemsMap)) {
       const trackItem = item as any;
       if (!trackItem.details?.src) continue;
-      
+
       const src = trackItem.details.src;
       const isBlob = src.startsWith("blob:");
-      
+
       if (isBlob) {
         if (trackItem.type === "video" && videoIndex < baseVideoUrls.length) {
           trackItem.details.src = baseVideoUrls[videoIndex];
           videoIndex++;
-        } else if (trackItem.type === "image" && imageIndex < baseImageUrls.length) {
+        } else if (
+          trackItem.type === "image" &&
+          imageIndex < baseImageUrls.length
+        ) {
           trackItem.details.src = baseImageUrls[imageIndex];
           imageIndex++;
-        } else if (trackItem.type === "audio" && audioIndex < baseAudioUrls.length) {
+        } else if (
+          trackItem.type === "audio" &&
+          audioIndex < baseAudioUrls.length
+        ) {
           trackItem.details.src = baseAudioUrls[audioIndex];
           audioIndex++;
         }
       }
     }
-    
+
     return newData;
   };
 
   const updateFieldValue = (trackItemId: string, value: string) => {
-    setFieldValues(prev => ({
+    setFieldValues((prev) => ({
       ...prev,
       [trackItemId]: value,
     }));
@@ -255,7 +272,11 @@ export default function PublicTemplatePage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleDownloadMedia = async (src: string, type: "image" | "video", filename: string) => {
+  const handleDownloadMedia = async (
+    src: string,
+    type: "image" | "video",
+    filename: string
+  ) => {
     try {
       if (!src) {
         console.error("No source provided for download");
@@ -280,7 +301,7 @@ export default function PublicTemplatePage() {
 
   const handleDownloadVideo = async () => {
     if (!previewData) return;
-    
+
     try {
       // Use the render API to generate the final video
       const response = await fetch("/api/render", {
@@ -293,9 +314,9 @@ export default function PublicTemplatePage() {
           options: {
             fps: previewData.fps || 30,
             size: previewData.size,
-            format: "mp4"
-          }
-        })
+            format: "mp4",
+          },
+        }),
       });
 
       if (!response.ok) {
@@ -308,11 +329,11 @@ export default function PublicTemplatePage() {
       // Poll for completion
       let completed = false;
       let downloadUrl = null;
-      
+
       while (!completed) {
         const statusResponse = await fetch(`/api/render?id=${jobId}`);
         const statusData = await statusResponse.json();
-        
+
         if (statusData.render.status === "completed") {
           completed = true;
           downloadUrl = statusData.render.output;
@@ -320,7 +341,7 @@ export default function PublicTemplatePage() {
           throw new Error("Video rendering failed");
         } else {
           // Wait before polling again
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 2000));
         }
       }
 
@@ -362,10 +383,12 @@ export default function PublicTemplatePage() {
     );
   }
 
-  const customerFields = fields.filter(f => f.metadata.isCustomerField);
-  const editableFields = fields.filter(f => !f.metadata.isCustomerField && !f.metadata.isLocked);
-  const textFields = customerFields.filter(f => f.type === "text");
-  const mediaFields = customerFields.filter(f => f.type !== "text");
+  const customerFields = fields.filter((f) => f.metadata.isCustomerField);
+  const editableFields = fields.filter(
+    (f) => !f.metadata.isCustomerField && !f.metadata.isLocked
+  );
+  const textFields = customerFields.filter((f) => f.type === "text");
+  const mediaFields = customerFields.filter((f) => f.type !== "text");
 
   return (
     <div className="min-h-screen bg-background">
@@ -410,8 +433,8 @@ export default function PublicTemplatePage() {
                     Preview
                   </span>
                   <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={handleDownloadVideo}
                     >
@@ -555,7 +578,12 @@ interface CustomerFieldInputProps {
   onFileUpload: (trackItemId: string, file: File) => void;
 }
 
-function CustomerFieldInput({ field, value, onUpdate, onFileUpload }: CustomerFieldInputProps) {
+function CustomerFieldInput({
+  field,
+  value,
+  onUpdate,
+  onFileUpload,
+}: CustomerFieldInputProps) {
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
@@ -599,18 +627,27 @@ function CustomerFieldInput({ field, value, onUpdate, onFileUpload }: CustomerFi
           {getIcon()}
           {field.metadata.fieldLabel}
           {field.metadata.isCustomerField && (
-            <Badge variant="secondary" className="text-xs">Customer</Badge>
+            <Badge variant="secondary" className="text-xs">
+              Customer
+            </Badge>
           )}
-          {field.metadata.isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
+          {field.metadata.isLocked && (
+            <Lock className="h-3 w-3 text-muted-foreground" />
+          )}
         </Label>
         <Input
-          placeholder={field.metadata.placeholder || `Enter ${field.metadata.fieldLabel.toLowerCase()}`}
+          placeholder={
+            field.metadata.placeholder ||
+            `Enter ${field.metadata.fieldLabel.toLowerCase()}`
+          }
           value={value}
           onChange={(e) => onUpdate(field.trackItemId, e.target.value)}
           disabled={field.metadata.isLocked}
         />
         {field.metadata.description && (
-          <p className="text-xs text-muted-foreground">{field.metadata.description}</p>
+          <p className="text-xs text-muted-foreground">
+            {field.metadata.description}
+          </p>
         )}
       </div>
     );
@@ -622,9 +659,13 @@ function CustomerFieldInput({ field, value, onUpdate, onFileUpload }: CustomerFi
         {getIcon()}
         {field.metadata.fieldLabel}
         {field.metadata.isCustomerField && (
-          <Badge variant="secondary" className="text-xs">Customer</Badge>
+          <Badge variant="secondary" className="text-xs">
+            Customer
+          </Badge>
         )}
-        {field.metadata.isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
+        {field.metadata.isLocked && (
+          <Lock className="h-3 w-3 text-muted-foreground" />
+        )}
       </Label>
       <div
         {...getRootProps()}
@@ -670,7 +711,9 @@ function CustomerFieldInput({ field, value, onUpdate, onFileUpload }: CustomerFi
         )}
       </div>
       {field.metadata.description && (
-        <p className="text-xs text-muted-foreground">{field.metadata.description}</p>
+        <p className="text-xs text-muted-foreground">
+          {field.metadata.description}
+        </p>
       )}
     </div>
   );

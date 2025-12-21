@@ -15,6 +15,9 @@ import useUploadStore from "@/features/editor/store/use-upload-store";
 import { Input } from "./ui/input";
 import { MediaUploadResponse } from "@/types/media";
 import { toast } from "sonner";
+import axios from "axios";
+import { DATA_API } from "@/config/constants";
+import { useSession } from "next-auth/react";
 
 type ModalUploadProps = {
   type?: string;
@@ -39,7 +42,10 @@ export const extractVideoThumbnail = (file: File) => {
     video.onerror = () => resolve("");
   });
 };
-const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all", onUploadComplete }) => {
+const ModalUpload: React.FC<ModalUploadProps> = ({
+  type = "all",
+  onUploadComplete,
+}) => {
   const {
     setShowUploadModal,
     showUploadModal,
@@ -55,31 +61,76 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all", onUploadComplet
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { data: session } = useSession();
 
-  const uploadMediaFiles = async (filesToUpload: File[]): Promise<MediaUploadResponse[]> => {
+  const uploadMediaFiles = async (
+    filesToUpload: File[]
+  ): Promise<MediaUploadResponse[]> => {
     const uploadedMedias: MediaUploadResponse[] = [];
-    
+    const accessToken = session?.user?.access_token;
+
+    if (!accessToken) {
+      toast.error("Authentication required", {
+        description: "Please sign in to upload media",
+      });
+      return uploadedMedias;
+    }
+
+    if (!DATA_API) {
+      toast.error("API configuration error", {
+        description: "DATA_API is not configured",
+      });
+      return uploadedMedias;
+    }
+
     for (const file of filesToUpload) {
       try {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("company_id", "default_company");
 
-        const response = await fetch("/api/media/upload", {
-          method: "POST",
-          body: formData,
-        });
+        const response = await axios.post(
+          `${DATA_API}/media-api/upload`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              // Do NOT set Content-Type manually - axios will set it with boundary
+            },
+          }
+        );
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Upload failed");
+        // Handle response format: { media: { file_url: "...", ... } }
+        const mediaData = response.data?.media;
+        if (!mediaData) {
+          throw new Error("Invalid response format");
         }
 
-        const media: MediaUploadResponse = await response.json();
+        // Transform to MediaUploadResponse format
+        const media: MediaUploadResponse = {
+          id: mediaData.id || mediaData._id,
+          company_id: mediaData.company_id,
+          file_url: mediaData.file_url,
+          file_type: mediaData.file_type as
+            | "image"
+            | "video"
+            | "audio"
+            | "document",
+          original_name: mediaData.original_name,
+          size: mediaData.size,
+          created_at: mediaData.created_at,
+          updated_at: mediaData.updated_at,
+          status: "200 OK",
+        };
+
         uploadedMedias.push(media);
         toast.success(`${file.name} uploaded successfully`);
-      } catch (error) {
-        toast.error(`Failed to upload ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`);
+      } catch (error: any) {
+        const errorMessage =
+          error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Unknown error";
+        toast.error(`Failed to upload ${file.name}: ${errorMessage}`);
       }
     }
 
@@ -205,7 +256,7 @@ const ModalUpload: React.FC<ModalUploadProps> = ({ type = "all", onUploadComplet
 
       if (filesToUpload.length > 0) {
         const uploadedMedias = await uploadMediaFiles(filesToUpload);
-        
+
         // Call onUploadComplete callback if provided
         if (onUploadComplete && uploadedMedias.length > 0) {
           onUploadComplete(uploadedMedias);

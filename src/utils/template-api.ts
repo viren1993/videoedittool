@@ -1,6 +1,9 @@
 /**
  * Template API utilities for saving templates to backend
  */
+import axios from "axios";
+import { DATA_API } from "@/config/constants";
+import { generateId } from "@designcombo/timeline";
 
 export interface TemplatePayload {
   template_name: string;
@@ -17,24 +20,32 @@ export interface TemplatePayload {
 }
 
 /**
- * Get the base URL for API calls
+ * Get access token from session
  */
-function getBaseURL(): string {
-  if (typeof window === "undefined") {
-    return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
-  }
-  return process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
+function getAccessToken(): string | null {
+  if (typeof window === "undefined") return null;
+
+  // Try to get from session storage or cookie
+  // In client components, useSession hook should be used
+  return null;
 }
 
 /**
- * Upload a blob URL to get a permanent URL
+ * Upload a blob URL to get a permanent URL using DATA_API
  */
+
 async function uploadBlobUrl(
   blobUrl: string,
-  fileType: "video" | "image" | "audio"
+  fileType: "video" | "image" | "audio",
+  accessToken: string
 ): Promise<string | null> {
   try {
-    // Fetch the blob
+    if (!DATA_API) {
+      console.error("DATA_API is not configured");
+      return null;
+    }
+
+    // 1. Fetch blob from blob URL
     const response = await fetch(blobUrl);
     if (!response.ok) {
       console.warn(`Failed to fetch blob: ${blobUrl}`);
@@ -43,35 +54,44 @@ async function uploadBlobUrl(
 
     const blob = await response.blob();
 
-    // Create a File object from the blob
+    // 2. Create File from Blob
     const fileName = `upload.${
       fileType === "video" ? "mp4" : fileType === "audio" ? "mp3" : "jpg"
     }`;
-    const file = new File([blob], fileName, { type: blob.type });
 
-    // Upload using the media upload API
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("company_id", "default_company");
-
-    const uploadResponse = await fetch("/api/media/upload", {
-      method: "POST",
-      body: formData,
+    const file = new File([blob], fileName, {
+      type: blob.type || "application/octet-stream",
     });
 
-    if (!uploadResponse.ok) {
-      const error = await uploadResponse.json();
-      console.warn(`Failed to upload blob: ${error.error || "Unknown error"}`);
+    // 3. Prepare FormData
+    const formData = new FormData();
+    formData.append("file", file);
+
+    // 4. Upload using axios
+    const uploadResponse = await axios.post(
+      `${DATA_API}/media-api/upload`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          // ❌ Do NOT set Content-Type manually
+        },
+      }
+    );
+
+    // 5. Handle response
+    const fileUrl = uploadResponse.data?.media?.file_url;
+    if (!fileUrl) {
+      console.warn("No file_url in upload response");
       return null;
     }
 
-    const media = await uploadResponse.json();
-
-    // Return the full URL
-    const baseUrl = getBaseURL();
-    return `${baseUrl}${media.file_url}`;
-  } catch (error) {
-    console.error(`Error uploading blob URL ${blobUrl}:`, error);
+    return `${DATA_API}/media/${fileUrl}`;
+  } catch (error: any) {
+    console.error(
+      `Error uploading blob URL ${blobUrl}:`,
+      error?.response?.data || error
+    );
     return null;
   }
 }
@@ -80,7 +100,10 @@ async function uploadBlobUrl(
  * Extract base media URLs from template data and upload blob URLs
  * Returns arrays of all media URLs for each type
  */
-export async function extractAndUploadMediaUrls(templateData: any): Promise<{
+export async function extractAndUploadMediaUrls(
+  templateData: any,
+  accessToken: string
+): Promise<{
   base_video_url: string[];
   base_image_url: string[];
   base_audio_url: string[];
@@ -117,7 +140,7 @@ export async function extractAndUploadMediaUrls(templateData: any): Promise<{
     const isBlob = src.startsWith("blob:");
     try {
       if (isBlob) {
-        const uploadedUrl = await uploadBlobUrl(src, "video");
+        const uploadedUrl = await uploadBlobUrl(src, "video", accessToken);
         if (uploadedUrl) {
           baseVideoUrls.push(uploadedUrl);
         } else {
@@ -136,7 +159,7 @@ export async function extractAndUploadMediaUrls(templateData: any): Promise<{
     const isBlob = src.startsWith("blob:");
     try {
       if (isBlob) {
-        const uploadedUrl = await uploadBlobUrl(src, "image");
+        const uploadedUrl = await uploadBlobUrl(src, "image", accessToken);
         if (uploadedUrl) {
           baseImageUrls.push(uploadedUrl);
         } else {
@@ -155,7 +178,7 @@ export async function extractAndUploadMediaUrls(templateData: any): Promise<{
     const isBlob = src.startsWith("blob:");
     try {
       if (isBlob) {
-        const uploadedUrl = await uploadBlobUrl(src, "audio");
+        const uploadedUrl = await uploadBlobUrl(src, "audio", accessToken);
         if (uploadedUrl) {
           baseAudioUrls.push(uploadedUrl);
         } else {
@@ -235,14 +258,33 @@ export function extractTrimTimes(templateData: any): {
 export async function transformToTemplateFormat(
   templateData: any,
   templateName: string,
+  accessToken: string,
   category?: string
 ): Promise<TemplatePayload> {
   // Extract and upload media URLs
-  const mediaUrls = await extractAndUploadMediaUrls(templateData);
+  const mediaUrls = await extractAndUploadMediaUrls(templateData, accessToken);
 
   // Calculate duration and trim times
   const duration = calculateDuration(templateData);
   const trim = extractTrimTimes(templateData);
+
+  // Format template_json according to API structure
+  const templateJson = {
+    design: {
+      id: templateData.id || generateId(),
+      fps: templateData.fps || 30,
+      size: templateData.size || { width: 1080, height: 1920 },
+      tracks: templateData.tracks || [],
+      trackItemsMap: templateData.trackItemsMap || {},
+      trackItemIds: templateData.trackItemIds || [],
+      transitionsMap: templateData.transitionsMap || {},
+      transitionIds: templateData.transitionIds || [],
+    },
+    options: {
+      fps: templateData.fps || 30,
+      format: "mp4",
+    },
+  };
 
   return {
     template_name: templateName,
@@ -252,7 +294,7 @@ export async function transformToTemplateFormat(
     base_audio_url: mediaUrls.base_audio_url,
     duration,
     trim,
-    template_json: templateData,
+    template_json: templateJson,
   };
 }
 
@@ -260,16 +302,21 @@ export async function transformToTemplateFormat(
  * Save template to backend API (POST for new templates)
  */
 export async function saveTemplateToAPI(
-  payload: TemplatePayload
+  payload: TemplatePayload,
+  accessToken: string
 ): Promise<any> {
-  const baseURL = getBaseURL();
-  const apiUrl = `${baseURL}/api/templates`;
+  if (!DATA_API) {
+    throw new Error("DATA_API is not configured");
+  }
+
+  const apiUrl = `${DATA_API}/templates/`;
 
   try {
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(payload),
     });
@@ -293,16 +340,21 @@ export async function saveTemplateToAPI(
  */
 export async function updateTemplateToAPI(
   templateId: string,
-  payload: TemplatePayload
+  payload: TemplatePayload,
+  accessToken: string
 ): Promise<any> {
-  const baseURL = getBaseURL();
-  const apiUrl = `${baseURL}/api/templates/${templateId}`;
+  if (!DATA_API) {
+    throw new Error("DATA_API is not configured");
+  }
+
+  const apiUrl = `${DATA_API}/templates/${templateId}`;
 
   try {
     const response = await fetch(apiUrl, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(payload),
     });
@@ -324,15 +376,22 @@ export async function updateTemplateToAPI(
 /**
  * Get a single template from backend API by ID
  */
-export async function getTemplateFromAPI(templateId: string): Promise<any> {
-  const baseURL = getBaseURL();
-  const apiUrl = `${baseURL}/api/templates/${templateId}`;
+export async function getTemplateFromAPI(
+  templateId: string,
+  accessToken: string
+): Promise<any> {
+  if (!DATA_API) {
+    throw new Error("DATA_API is not configured");
+  }
+
+  const apiUrl = `${DATA_API}/templates/${templateId}`;
 
   try {
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -353,15 +412,19 @@ export async function getTemplateFromAPI(templateId: string): Promise<any> {
 /**
  * Get all templates from backend API
  */
-export async function getTemplatesFromAPI(): Promise<any[]> {
-  const baseURL = getBaseURL();
-  const apiUrl = `${baseURL}/api/templates`;
+export async function getTemplatesFromAPI(accessToken: string): Promise<any[]> {
+  if (!DATA_API) {
+    throw new Error("DATA_API is not configured");
+  }
+
+  const apiUrl = `${DATA_API}/templates/`;
 
   try {
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -377,6 +440,42 @@ export async function getTemplatesFromAPI(): Promise<any[]> {
     return Array.isArray(data) ? data : data.templates || [];
   } catch (error) {
     console.error("Error fetching templates from API:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete template from backend API
+ */
+export async function deleteTemplateFromAPI(
+  templateId: string,
+  accessToken: string
+): Promise<boolean> {
+  if (!DATA_API) {
+    throw new Error("DATA_API is not configured");
+  }
+
+  const apiUrl = `${DATA_API}/templates/${templateId}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(
+        error.message || error.error || `HTTP ${response.status}`
+      );
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error deleting template from API:", error);
     throw error;
   }
 }

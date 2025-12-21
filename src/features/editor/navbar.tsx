@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { categories } from "@/data/categories";
 import { transformToTemplateFormat, saveTemplateToAPI, updateTemplateToAPI } from "@/utils/template-api";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function Navbar({
   user,
@@ -57,6 +58,7 @@ export default function Navbar({
   const isLargeScreen = useIsLargeScreen();
   const isSmallScreen = useIsSmallScreen();
   const router = useRouter();
+  const { data: session } = useSession();
 
   const handleUndo = () => {
     dispatch(HISTORY_UNDO);
@@ -97,6 +99,14 @@ export default function Navbar({
   const handleSave = async () => {
     if (isSaving) return;
 
+    const accessToken = session?.user?.access_token;
+    if (!accessToken) {
+      toast.error("Authentication required", {
+        description: "Please sign in to save templates",
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
       const data = {
@@ -113,14 +123,15 @@ export default function Navbar({
       const templatePayload = await transformToTemplateFormat(
         data,
         projectName || "Untitled Template",
+        accessToken,
         category || undefined
       );
 
       // Save to API - use PUT if editing existing template, POST for new
       if (tempId) {
-        await updateTemplateToAPI(tempId, templatePayload);
+        await updateTemplateToAPI(tempId, templatePayload, accessToken);
       } else {
-        await saveTemplateToAPI(templatePayload);
+        await saveTemplateToAPI(templatePayload, accessToken);
       }
 
       // Also save locally for backward compatibility
