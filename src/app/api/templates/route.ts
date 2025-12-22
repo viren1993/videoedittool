@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
       ...body
     };
     
-    templates.push(newTemplate);
+    // In a real app, save to DB here
+    console.log("Saving template:", newTemplate.id);
     
     return NextResponse.json(newTemplate, { status: 201 });
   } catch (error) {
@@ -31,18 +32,20 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, ...updateData } = body;
     
-    const index = templates.findIndex(t => t.id === id);
-    if (index === -1) {
-      return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    if (!id) {
+      return NextResponse.json({ error: "ID is required for update" }, { status: 400 });
     }
-    
-    templates[index] = {
-      ...templates[index],
+
+    const updatedTemplate = {
+      id,
       ...updateData,
       updated_at: new Date().toISOString()
     };
     
-    return NextResponse.json(templates[index], { status: 200 });
+    // In a real app, update DB here
+    console.log("Updating template:", id);
+    
+    return NextResponse.json(updatedTemplate, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: "Failed to update template" }, { status: 500 });
   }

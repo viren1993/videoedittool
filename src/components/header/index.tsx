@@ -120,7 +120,14 @@ export default function Header({ children }: { children: React.ReactNode }) {
       // Clear Zustand stores on logout
       if (typeof window !== "undefined") {
         const { useTemplateStore } = await import("@/store/use-template-store");
-        useTemplateStore.getState().clearStore();
+        useTemplateStore.getState().clearStore?.();
+        
+        // Reset editor and upload stores
+        const useStore = (await import("@/features/editor/store/use-store")).default;
+        useStore.getState().resetStore?.();
+        
+        const useUploadStore = (await import("@/features/editor/store/use-upload-store")).default;
+        useUploadStore.getState().resetStore?.();
       }
       
       if (res.status === 200) {

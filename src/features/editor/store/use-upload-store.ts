@@ -182,7 +182,16 @@ const useUploadStore = create<IUploadStore>()(
             typeof uploads === "function"
               ? (uploads as (prev: any[]) => any[])(state.uploads)
               : uploads
-        }))
+        })),
+      resetStore: () => set({
+        uploads: [],
+        uploadsVideos: [],
+        uploadsAudios: [],
+        uploadsImages: [],
+        files: [],
+        pendingUploads: [],
+        activeUploads: [],
+      })
     }),
     {
       name: "upload-store",
