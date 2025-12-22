@@ -33,12 +33,13 @@ import {
 } from "@/hooks/use-media-query";
 
 import Link from "next/link";
-import { saveTemplate, extractFieldsFromMetadata } from "@/utils/template-storage";
+import { extractFieldsFromMetadata } from "@/utils/template-storage";
 import { toast } from "sonner";
 import { categories } from "@/data/categories";
-import { transformToTemplateFormat, saveTemplateToAPI, updateTemplateToAPI } from "@/utils/template-api";
+import { transformToTemplateFormat } from "@/utils/template-api";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useTemplateStore } from "@/store/use-template-store";
 
 export default function Navbar({
   user,
@@ -59,6 +60,7 @@ export default function Navbar({
   const isSmallScreen = useIsSmallScreen();
   const router = useRouter();
   const { data: session } = useSession();
+  const { saveTemplate } = useTemplateStore();
 
   const handleUndo = () => {
     dispatch(HISTORY_UNDO);
@@ -115,7 +117,7 @@ export default function Navbar({
       };
 
       const fields = extractFieldsFromMetadata(data);
-      const customerFields = fields.filter(f => f.metadata.isCustomerField);
+      const customerFields = fields.filter((f) => f.metadata.isCustomerField);
       const size = data.size || { width: 1080, height: 1920 };
       const aspectRatio = getAspectRatioLabel(size.width, size.height);
 
@@ -127,31 +129,29 @@ export default function Navbar({
         category || undefined
       );
 
-      // Save to API - use PUT if editing existing template, POST for new
-      if (tempId) {
-        await updateTemplateToAPI(tempId, templatePayload, accessToken);
+      // Save to API using Zustand store
+      const savedTemplate = await saveTemplate(
+        templatePayload,
+        accessToken,
+        !!tempId,
+        tempId
+      );
+
+      if (savedTemplate) {
+        toast.success("Template saved successfully!", {
+          description: `${savedTemplate.name} with ${customerFields.length} customer fields`,
+        });
+
+        // Redirect to templates page after successful save
+        router.push("/templates");
       } else {
-        await saveTemplateToAPI(templatePayload, accessToken);
+        toast.error("Failed to save template");
       }
-
-      // Also save locally for backward compatibility
-      const template = saveTemplate({
-        name: projectName || "Untitled Template",
-        category: category || undefined,
-        aspectRatio,
-        templateData: data,
-      });
-
-      toast.success("Template saved successfully!", {
-        description: `${template.name} with ${customerFields.length} customer fields`,
-      });
-
-      // Redirect to templates page after successful save
-      router.push("/templates");
     } catch (error) {
       console.error("Error saving template:", error);
       toast.error("Failed to save template", {
-        description: error instanceof Error ? error.message : "Unknown error occurred",
+        description:
+          error instanceof Error ? error.message : "Unknown error occurred",
       });
     } finally {
       setIsSaving(false);
@@ -237,7 +237,7 @@ export default function Navbar({
             </PopoverContent>
           </Popover>
           <ResizeVideo />
-          <Link href="/templates">
+          <Link href="/company/templates">
             <Button
               className="h-7 gap-1 border border-border"
               variant="outline"
@@ -255,7 +255,9 @@ export default function Navbar({
             disabled={isSaving}
           >
             <Save width={18} />
-            <span className="hidden md:block">{isSaving ? "Saving..." : "Save"}</span>
+            <span className="hidden md:block">
+              {isSaving ? "Saving..." : "Save"}
+            </span>
           </Button>
           <DownloadPopover stateManager={stateManager} />
         </div>

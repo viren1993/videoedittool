@@ -10,15 +10,7 @@ export async function GET(
   try {
     const { id } = params;
 
-    // Here you would typically fetch from a database
-    // const template = await db.templates.findUnique({ where: { id } });
-    
-    // TODO: Replace with actual database query
-    // For now, return 404
-    return NextResponse.json(
-      { error: "Template not found" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Template not found" }, { status: 404 });
   } catch (error) {
     console.error("Error fetching template:", error);
     return NextResponse.json(
@@ -56,15 +48,6 @@ export async function PUT(
         { status: 400 }
       );
     }
-
-    // Here you would typically update in a database
-    // const template = await db.templates.update({
-    //   where: { id },
-    //   data: {
-    //     ...body,
-    //     updated_at: new Date().toISOString(),
-    //   },
-    // });
 
     // TODO: Replace with actual database update
     const template = {
@@ -112,7 +95,4 @@ export async function DELETE(
     );
   }
 }
-
-
-
 

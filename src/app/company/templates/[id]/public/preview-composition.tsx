@@ -62,9 +62,8 @@ export default function PreviewComposition({ templateData }: Props) {
 
     if (type === "text") {
       const text = details.text || "";
-      // Don't remove template variables - they should already be replaced by applyFieldValues
-      // If they're still there, show them as-is (they'll be replaced by the field values)
-      const displayText = text;
+      // Remove {{...}} placeholders - they should be replaced by field values
+      const displayText = text.replace(/\{\{[^}]+\}\}/g, "");
       
       return (
         <div
@@ -177,3 +176,4 @@ export default function PreviewComposition({ templateData }: Props) {
     </AbsoluteFill>
   );
 }
+

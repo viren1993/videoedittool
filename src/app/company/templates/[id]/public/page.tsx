@@ -16,17 +16,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  getTemplate,
   extractFieldsFromMetadata,
   applyFieldValues,
-  type SavedTemplate,
   type TrackItemField,
 } from "@/utils/template-storage";
-import { getTemplateFromAPI } from "@/utils/template-api";
 import { useSession } from "next-auth/react";
+import { useTemplateStore } from "@/store/use-template-store";
 import {
   ArrowLeft,
-  Download,
   Image as ImageIcon,
   Video,
   Music,
@@ -34,7 +31,7 @@ import {
   Lock,
   Upload,
   FileVideo,
-  FileImage,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useDropzone } from "react-dropzone";
@@ -42,133 +39,41 @@ import { useDropzone } from "react-dropzone";
 import { Player as RemotionPlayer, PlayerRef } from "@remotion/player";
 import PreviewComposition from "./preview-composition";
 
-const CUSTOMER_DATA_OPTIONS = {
-  text: [
-    { value: "customer_company_name", label: "Customer Company Name" },
-    { value: "full_name", label: "Full Name" },
-    { value: "city", label: "City" },
-    { value: "phone_number", label: "Phone Number" },
-    { value: "telephone_number", label: "Telephone Number" },
-    { value: "address", label: "Address" },
-    { value: "user.email", label: "User Email" },
-    { value: "user.username", label: "Username" },
-    { value: "company.company_name", label: "Company Name" },
-    { value: "company.description", label: "Company Description" },
-    { value: "company.mobile", label: "Company Mobile" },
-    { value: "company.email", label: "Company Email" },
-  ],
-  image: [
-    { value: "logo_url", label: "Logo URL" },
-    { value: "company.logo_url", label: "Company Logo" },
-  ],
-  video: [
-    { value: "background_video", label: "Background Video" },
-    { value: "intro_video", label: "Intro Video" },
-  ],
-  audio: [
-    { value: "background_music", label: "Background Music" },
-    { value: "voiceover", label: "Voiceover" },
-  ],
-};
-
 export default function PublicTemplatePage() {
   const params = useParams();
   const router = useRouter();
   const playerRef = useRef<PlayerRef>(null);
-  const [template, setTemplate] = useState<SavedTemplate | null>(null);
   const [fields, setFields] = useState<TrackItemField[]>([]);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
   const [previewData, setPreviewData] = useState<any>(null);
   const { data: session } = useSession();
+  const { fetchTemplate, currentTemplate, loading, error } = useTemplateStore();
 
   useEffect(() => {
     const loadTemplate = async () => {
       const id = params.id as string;
       const accessToken = session?.user?.access_token;
 
-      try {
-        // Try to load from API first if we have access token
-        if (accessToken) {
-          const apiTemplate = await getTemplateFromAPI(id, accessToken);
-
-          if (apiTemplate) {
-            // Transform API template to SavedTemplate format
-            const transformedTemplate: SavedTemplate = {
-              id: apiTemplate.id,
-              name: apiTemplate.template_name || apiTemplate.name,
-              category: apiTemplate.category,
-              aspectRatio: apiTemplate.aspectRatio || "16:9",
-              createdAt: apiTemplate.created_at || apiTemplate.createdAt,
-              updatedAt: apiTemplate.updated_at || apiTemplate.updatedAt,
-              templateData:
-                apiTemplate.template_json || apiTemplate.templateData,
-              isPrivate: apiTemplate.isPrivate,
-              thumbnail: apiTemplate.thumbnail,
-            };
-
-            // Replace blob URLs with permanent URLs from base URLs
-            const templateData = replaceBlobUrlsWithPermanentUrls(
-              transformedTemplate.templateData,
-              apiTemplate.base_video_url || [],
-              apiTemplate.base_image_url || [],
-              apiTemplate.base_audio_url || []
-            );
-
-            transformedTemplate.templateData = templateData;
-            setTemplate(transformedTemplate);
-
-            const extractedFields = extractFieldsFromMetadata(templateData);
-            const editableFields = extractedFields.filter((f) => {
-              if (f.metadata.isCustomerField) return true;
-              if (!f.metadata.isLocked) return true;
-              return false;
-            });
-            setFields(editableFields);
-
-            const initialValues: Record<string, string> = {};
-            editableFields.forEach((f) => {
-              if (f.metadata.defaultValue) {
-                initialValues[f.trackItemId] = f.metadata.defaultValue;
-              }
-            });
-            setFieldValues(initialValues);
-            setPreviewData(templateData);
-          }
-        } else {
-          // Fallback to localStorage
-          const loadedTemplate = getTemplate(id);
-          if (loadedTemplate) {
-            setTemplate(loadedTemplate);
-            const extractedFields = extractFieldsFromMetadata(
-              loadedTemplate.templateData
-            );
-            const editableFields = extractedFields.filter((f) => {
-              if (f.metadata.isCustomerField) return true;
-              if (!f.metadata.isLocked) return true;
-              return false;
-            });
-            setFields(editableFields);
-
-            const initialValues: Record<string, string> = {};
-            editableFields.forEach((f) => {
-              if (f.metadata.defaultValue) {
-                initialValues[f.trackItemId] = f.metadata.defaultValue;
-              }
-            });
-            setFieldValues(initialValues);
-            setPreviewData(loadedTemplate.templateData);
-          }
+      if (!accessToken) {
+        if (session === null) {
+          router.push("/signin");
         }
-      } catch (error) {
-        console.error("Error loading template:", error);
-        // Fallback to localStorage
-        const loadedTemplate = getTemplate(id);
-        if (loadedTemplate) {
-          setTemplate(loadedTemplate);
-          const extractedFields = extractFieldsFromMetadata(
-            loadedTemplate.templateData
-          );
+        return;
+      }
+
+      if (!id) {
+        router.push("/company/templates");
+        return;
+      }
+
+      try {
+        const loadedTemplate = await fetchTemplate(id, accessToken);
+        
+        if (loadedTemplate && loadedTemplate.templateData) {
+          // templateData is already extracted from template_json.design in the store
+          const templateData = loadedTemplate.templateData;
+          
+          const extractedFields = extractFieldsFromMetadata(templateData);
           const editableFields = extractedFields.filter((f) => {
             if (f.metadata.isCustomerField) return true;
             if (!f.metadata.isLocked) return true;
@@ -183,59 +88,20 @@ export default function PublicTemplatePage() {
             }
           });
           setFieldValues(initialValues);
-          setPreviewData(loadedTemplate.templateData);
+          setPreviewData(templateData);
+        } else {
+          router.push("/company/templates");
         }
-      } finally {
-        setLoading(false);
+      } catch (err) {
+        console.error("Error loading template:", err);
+        router.push("/company/templates");
       }
     };
 
-    loadTemplate();
-  }, [params.id, session]);
-
-  // Helper function to replace blob URLs with permanent URLs
-  const replaceBlobUrlsWithPermanentUrls = (
-    templateData: any,
-    baseVideoUrls: string[],
-    baseImageUrls: string[],
-    baseAudioUrls: string[]
-  ): any => {
-    const newData = JSON.parse(JSON.stringify(templateData));
-    const trackItemsMap = newData.trackItemsMap || {};
-
-    let videoIndex = 0;
-    let imageIndex = 0;
-    let audioIndex = 0;
-
-    for (const [itemId, item] of Object.entries(trackItemsMap)) {
-      const trackItem = item as any;
-      if (!trackItem.details?.src) continue;
-
-      const src = trackItem.details.src;
-      const isBlob = src.startsWith("blob:");
-
-      if (isBlob) {
-        if (trackItem.type === "video" && videoIndex < baseVideoUrls.length) {
-          trackItem.details.src = baseVideoUrls[videoIndex];
-          videoIndex++;
-        } else if (
-          trackItem.type === "image" &&
-          imageIndex < baseImageUrls.length
-        ) {
-          trackItem.details.src = baseImageUrls[imageIndex];
-          imageIndex++;
-        } else if (
-          trackItem.type === "audio" &&
-          audioIndex < baseAudioUrls.length
-        ) {
-          trackItem.details.src = baseAudioUrls[audioIndex];
-          audioIndex++;
-        }
-      }
+    if (session) {
+      loadTemplate();
     }
-
-    return newData;
-  };
+  }, [params.id, session, fetchTemplate, router]);
 
   const updateFieldValue = (trackItemId: string, value: string) => {
     setFieldValues((prev) => ({
@@ -250,54 +116,16 @@ export default function PublicTemplatePage() {
   };
 
   const updatePreview = useCallback(() => {
-    if (!template) return;
-    const updatedData = applyFieldValues(template.templateData, fieldValues);
+    if (!currentTemplate || !currentTemplate.templateData) return;
+    // Use the same template data structure as edit mode
+    const templateData = currentTemplate.templateData;
+    const updatedData = applyFieldValues(templateData, fieldValues);
     setPreviewData(updatedData);
-  }, [template, fieldValues]);
+  }, [currentTemplate, fieldValues]);
 
   useEffect(() => {
     updatePreview();
   }, [fieldValues, updatePreview]);
-
-  const handleDownloadJSON = () => {
-    if (!template || !previewData) return;
-    const blob = new Blob([JSON.stringify(previewData, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${template.name}-customized.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleDownloadMedia = async (
-    src: string,
-    type: "image" | "video",
-    filename: string
-  ) => {
-    try {
-      if (!src) {
-        console.error("No source provided for download");
-        return;
-      }
-      const response = await fetch(src);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.style.display = "none";
-      const extension = type === "image" ? "png" : "mp4";
-      a.download = `${filename}.${extension}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Download failed:", error);
-    }
-  };
 
   const handleDownloadVideo = async () => {
     if (!previewData) return;
@@ -352,7 +180,7 @@ export default function PublicTemplatePage() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${template?.name || "template"}-final.mp4`;
+        a.download = `${currentTemplate?.name || "template"}-final.mp4`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -364,25 +192,48 @@ export default function PublicTemplatePage() {
     }
   };
 
-  if (loading) {
+  if (!session) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading template...</p>
+        <p className="text-muted-foreground">Please sign in to view templates</p>
       </div>
     );
   }
 
-  if (!template) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-muted-foreground">Loading template...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold mb-4">Template not found</h1>
-        <Link href="/templates">
+        <h1 className="text-2xl font-bold mb-4 text-destructive">{error}</h1>
+        <Link href="/company/templates">
           <Button>Back to Templates</Button>
         </Link>
       </div>
     );
   }
 
+  if (!currentTemplate) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold mb-4">Template not found</h1>
+        <Link href="/company/templates">
+          <Button>Back to Templates</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const template = currentTemplate;
   const customerFields = fields.filter((f) => f.metadata.isCustomerField);
   const editableFields = fields.filter(
     (f) => !f.metadata.isCustomerField && !f.metadata.isLocked
@@ -395,7 +246,7 @@ export default function PublicTemplatePage() {
       <header className="border-b bg-card">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/templates">
+            <Link href="/company/templates">
               <Button variant="ghost" size="icon">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
@@ -412,12 +263,6 @@ export default function PublicTemplatePage() {
                 )}
               </div>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleDownloadJSON}>
-              <Download className="h-4 w-4 mr-2" />
-              Download JSON
-            </Button>
           </div>
         </div>
       </header>
@@ -449,8 +294,8 @@ export default function PublicTemplatePage() {
                   className="bg-black rounded-lg overflow-hidden flex items-center justify-center"
                   style={{
                     aspectRatio:
-                      template.templateData.size.width /
-                      template.templateData.size.height,
+                      (previewData?.size?.width || 1080) /
+                      (previewData?.size?.height || 1920),
                     maxHeight: "70vh",
                   }}
                 >
@@ -718,3 +563,4 @@ function CustomerFieldInput({
     </div>
   );
 }
+

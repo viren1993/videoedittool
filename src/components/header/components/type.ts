@@ -39,28 +39,28 @@ export const companyMenuItems: MenuItem[] = [
     type: "link",
   },
   {
-    id: "3",
-    name: "media",
-    href: "/company/media",
-    type: "link",
-  },
-  {
     id: "4",
     name: "templates",
-    type: "dropdown",
-    children: [
-      {
-        name: "Video Templates",
-        href: "/edit",
-        desc: "Browse & customize video templates.",
-      },
-      {
-        name: "Image Templates",
-        href: "/company/templates",
-        desc: "Browse & customize image templates.",
-      },
-    ],
+    href: "/company/templates",
+    type: "link",
   },
+  // {
+  //   id: "4",
+  //   name: "templates",
+  //   type: "dropdown",
+  //   children: [
+  //     {
+  //       name: "Video Templates",
+  //       href: "/edit",
+  //       desc: "Browse & customize video templates.",
+  //     },
+  //     {
+  //       name: "Image Templates",
+  //       href: "/company/templates",
+  //       desc: "Browse & customize image templates.",
+  //     },
+  //   ],
+  // },
   {
     id: "5",
     name: "profile",

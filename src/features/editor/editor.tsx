@@ -6,6 +6,7 @@ import useTimelineEvents from "./hooks/use-timeline-events";
 import Scene from "./scene";
 import { SceneRef } from "./scene/scene.types";
 import StateManager, { DESIGN_LOAD } from "@designcombo/state";
+import { generateId } from "@designcombo/timeline";
 import { useEffect, useRef, useState } from "react";
 import {
   ResizableHandle,
@@ -130,11 +131,25 @@ const Editor = ({ tempId, id, initialDesign }: { tempId?: string; id?: string; i
   }, [isLargeScreen]);
 
   useEffect(() => {
-    setLoaded(true);
     if (initialDesign) {
-      dispatch(DESIGN_LOAD, { payload: initialDesign });
+      // Ensure we have a valid design object
+      const designToLoad = {
+        ...initialDesign,
+        id: initialDesign.id || generateId(),
+        fps: initialDesign.fps || 30,
+        size: initialDesign.size || { width: 1080, height: 1920 },
+        tracks: initialDesign.tracks || [],
+        trackItemsMap: initialDesign.trackItemsMap || {},
+        trackItemIds: initialDesign.trackItemIds || [],
+        transitionsMap: initialDesign.transitionsMap || {},
+        transitionIds: initialDesign.transitionIds || [],
+      };
+      dispatch(DESIGN_LOAD, { payload: designToLoad });
+      setLoaded(true);
+    } else {
+      setLoaded(true);
     }
-  }, []);
+  }, [initialDesign]);
 
   return (
     <div className="flex h-screen w-screen flex-col">

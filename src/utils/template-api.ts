@@ -16,18 +16,14 @@ export interface TemplatePayload {
     start: number;
     end: number;
   };
-  template_json: any;
-}
-
-/**
- * Get access token from session
- */
-function getAccessToken(): string | null {
-  if (typeof window === "undefined") return null;
-
-  // Try to get from session storage or cookie
-  // In client components, useSession hook should be used
-  return null;
+  template_json: {
+    design: any;
+    options: {
+      fps: number;
+      format: string;
+    };
+  };
+  isPrivate?: boolean;
 }
 
 /**
@@ -295,6 +291,7 @@ export async function transformToTemplateFormat(
     duration,
     trim,
     template_json: templateJson,
+    isPrivate: true, // Default to private (company-specific)
   };
 }
 
