@@ -124,7 +124,9 @@ export default function PublicTemplatePage() {
     if (!previewData) return;
 
     try {
-      // Use the render API to generate the final video
+      const type = previewData.type || "video";
+      const format = type === "audio" ? "mp3" : type === "image" ? "png" : "mp4";
+      
       const response = await fetch("/api/render", {
         method: "POST",
         headers: {
@@ -135,13 +137,13 @@ export default function PublicTemplatePage() {
           options: {
             fps: previewData.fps || 30,
             size: previewData.size,
-            format: "mp4",
+            format,
           },
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to render video");
+        throw new Error(`Failed to render ${type}`);
       }
 
       const jobInfo = await response.json();
@@ -159,29 +161,27 @@ export default function PublicTemplatePage() {
           completed = true;
           downloadUrl = statusData.render.output;
         } else if (statusData.render.status === "failed") {
-          throw new Error("Video rendering failed");
+          throw new Error(`${type} rendering failed`);
         } else {
-          // Wait before polling again
           await new Promise((resolve) => setTimeout(resolve, 2000));
         }
       }
 
       if (downloadUrl) {
-        // Download the rendered video
-        const videoResponse = await fetch(downloadUrl);
-        const blob = await videoResponse.blob();
+        const fileResponse = await fetch(downloadUrl);
+        const blob = await fileResponse.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${currentTemplate?.name || "template"}-final.mp4`;
+        a.download = `${currentTemplate?.name || "template"}-final.${format}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error("Error downloading video:", error);
-      alert("Failed to download video. Please try again.");
+      console.error("Error downloading file:", error);
+      alert("Failed to download file. Please try again.");
     }
   };
 
@@ -279,7 +279,7 @@ export default function PublicTemplatePage() {
                       onClick={handleDownloadVideo}
                     >
                       <FileVideo className="h-4 w-4 mr-1" />
-                      Download Video
+                      Download {previewData?.type === "audio" ? "MP3" : previewData?.type === "image" ? "Image" : "Video"}
                     </Button>
                   </div>
                 </CardTitle>
