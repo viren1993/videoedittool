@@ -116,6 +116,13 @@ export default function Header({ children }: { children: React.ReactNode }) {
           Authorization: `Bearer ${accessToken}`,
         },
       });
+      
+      // Clear Zustand stores on logout
+      if (typeof window !== "undefined") {
+        const { useTemplateStore } = await import("@/store/use-template-store");
+        useTemplateStore.getState().clearStore();
+      }
+      
       if (res.status === 200) {
         signOut({
           callbackUrl: "/signin",

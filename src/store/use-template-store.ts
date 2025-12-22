@@ -30,6 +30,7 @@ interface TemplateStore {
   deleteTemplate: (id: string, accessToken: string) => Promise<boolean>;
   setCurrentTemplate: (template: SavedTemplate | null) => void;
   clearError: () => void;
+  clearStore: () => void; // Clear all data on logout
 }
 
 export const useTemplateStore = create<TemplateStore>((set, get) => ({
@@ -216,5 +217,14 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
 
   clearError: () => {
     set({ error: null });
+  },
+
+  clearStore: () => {
+    set({
+      templates: [],
+      currentTemplate: null,
+      loading: false,
+      error: null,
+    });
   },
 }));

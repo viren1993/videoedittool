@@ -12,6 +12,7 @@ export default function TemplateEditPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const { fetchTemplate, currentTemplate, loading, error } = useTemplateStore();
+  console.log("Current Template from Store:", fetchTemplate);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
@@ -104,7 +105,7 @@ export default function TemplateEditPage() {
 
   // The templateData should already be the design object (extracted in store)
   // But ensure we have all required properties for the editor
-  const templateData = currentTemplate.templateData;
+  const templateData = fetchTemplate;
   console.log("Loaded template data for editor:", templateData);
 
   const editorDesign = {

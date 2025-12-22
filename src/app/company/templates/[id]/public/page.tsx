@@ -9,13 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   extractFieldsFromMetadata,
   applyFieldValues,
   type TrackItemField,
@@ -68,11 +61,11 @@ export default function PublicTemplatePage() {
 
       try {
         const loadedTemplate = await fetchTemplate(id, accessToken);
-        
+
         if (loadedTemplate && loadedTemplate.templateData) {
           // templateData is already extracted from template_json.design in the store
           const templateData = loadedTemplate.templateData;
-          
+
           const extractedFields = extractFieldsFromMetadata(templateData);
           const editableFields = extractedFields.filter((f) => {
             if (f.metadata.isCustomerField) return true;
@@ -195,7 +188,9 @@ export default function PublicTemplatePage() {
   if (!session) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Please sign in to view templates</p>
+        <p className="text-muted-foreground">
+          Please sign in to view templates
+        </p>
       </div>
     );
   }
@@ -563,4 +558,3 @@ function CustomerFieldInput({
     </div>
   );
 }
-

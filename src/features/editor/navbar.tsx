@@ -60,7 +60,7 @@ export default function Navbar({
   const isSmallScreen = useIsSmallScreen();
   const router = useRouter();
   const { data: session } = useSession();
-  const { saveTemplate } = useTemplateStore();
+  const { saveTemplate, setCurrentTemplate } = useTemplateStore();
 
   const handleUndo = () => {
     dispatch(HISTORY_UNDO);
@@ -129,21 +129,34 @@ export default function Navbar({
         category || undefined
       );
 
-      // Save to API using Zustand store
+      // Clear current template when creating new (not updating)
+      if (!tempId) {
+        setCurrentTemplate(null);
+      }
+
+      // Save to API using Zustand store - use PUT for updates, POST for new
       const savedTemplate = await saveTemplate(
         templatePayload,
         accessToken,
-        !!tempId,
-        tempId
+        !!tempId, // isUpdate
+        tempId // templateId for PUT request
       );
 
       if (savedTemplate) {
-        toast.success("Template saved successfully!", {
-          description: `${savedTemplate.name} with ${customerFields.length} customer fields`,
-        });
+        toast.success(
+          tempId
+            ? "Template updated successfully!"
+            : "Template saved successfully!",
+          {
+            description: `${savedTemplate.name} with ${customerFields.length} customer fields`,
+          }
+        );
+
+        // Clear current template after save to prevent stale data
+        setCurrentTemplate(null);
 
         // Redirect to templates page after successful save
-        router.push("/templates");
+        router.push("/company/templates");
       } else {
         toast.error("Failed to save template");
       }
