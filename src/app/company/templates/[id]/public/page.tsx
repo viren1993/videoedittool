@@ -60,31 +60,47 @@ export default function PublicTemplatePage() {
       }
 
       try {
+        console.log("Loading template for public page with ID:", id);
         const loadedTemplate = await fetchTemplate(id, accessToken);
+        console.log("Loaded template for public:", loadedTemplate);
 
-        if (loadedTemplate && loadedTemplate.templateData) {
-          // templateData is already extracted from template_json.design in the store
-          const templateData = loadedTemplate.templateData;
-
-          const extractedFields = extractFieldsFromMetadata(templateData);
-          const editableFields = extractedFields.filter((f) => {
-            if (f.metadata.isCustomerField) return true;
-            if (!f.metadata.isLocked) return true;
-            return false;
-          });
-          setFields(editableFields);
-
-          const initialValues: Record<string, string> = {};
-          editableFields.forEach((f) => {
-            if (f.metadata.defaultValue) {
-              initialValues[f.trackItemId] = f.metadata.defaultValue;
-            }
-          });
-          setFieldValues(initialValues);
-          setPreviewData(templateData);
-        } else {
+        if (!loadedTemplate) {
+          console.error("Template not found");
           router.push("/company/templates");
+          return;
         }
+
+        // Extract template data from template_json.design
+        const templateData = loadedTemplate.template_json?.design;
+
+        if (!templateData) {
+          console.error("Template data is missing");
+          router.push("/company/templates");
+          return;
+        }
+
+        if (!templateData || typeof templateData !== "object") {
+          console.error("Invalid template data structure");
+          router.push("/company/templates");
+          return;
+        }
+
+        const extractedFields = extractFieldsFromMetadata(templateData);
+        const editableFields = extractedFields.filter((f) => {
+          if (f.metadata.isCustomerField) return true;
+          if (!f.metadata.isLocked) return true;
+          return false;
+        });
+        setFields(editableFields);
+
+        const initialValues: Record<string, string> = {};
+        editableFields.forEach((f) => {
+          if (f.metadata.defaultValue) {
+            initialValues[f.trackItemId] = f.metadata.defaultValue;
+          }
+        });
+        setFieldValues(initialValues);
+        setPreviewData(templateData);
       } catch (err) {
         console.error("Error loading template:", err);
         router.push("/company/templates");
@@ -109,9 +125,9 @@ export default function PublicTemplatePage() {
   };
 
   const updatePreview = useCallback(() => {
-    if (!currentTemplate || !currentTemplate.templateData) return;
+    if (!currentTemplate || !currentTemplate.template_json?.design) return;
     // Use the same template data structure as edit mode
-    const templateData = currentTemplate.templateData;
+    const templateData = currentTemplate.template_json.design;
     const updatedData = applyFieldValues(templateData, fieldValues);
     setPreviewData(updatedData);
   }, [currentTemplate, fieldValues]);
@@ -125,8 +141,9 @@ export default function PublicTemplatePage() {
 
     try {
       const type = previewData.type || "video";
-      const format = type === "audio" ? "mp3" : type === "image" ? "png" : "mp4";
-      
+      const format =
+        type === "audio" ? "mp3" : type === "image" ? "png" : "mp4";
+
       const response = await fetch("/api/render", {
         method: "POST",
         headers: {
@@ -173,7 +190,9 @@ export default function PublicTemplatePage() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${currentTemplate?.name || "template"}-final.${format}`;
+        a.download = `${
+          currentTemplate?.template_name || "template"
+        }-final.${format}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -247,9 +266,11 @@ export default function PublicTemplatePage() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-xl font-semibold">{template.name}</h1>
+              <h1 className="text-xl font-semibold">
+                {template.template_name}
+              </h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{template.aspectRatio}</span>
+                <span>{template.template_json?.aspectRatio}</span>
                 {template.category && (
                   <>
                     <span>•</span>
@@ -279,7 +300,12 @@ export default function PublicTemplatePage() {
                       onClick={handleDownloadVideo}
                     >
                       <FileVideo className="h-4 w-4 mr-1" />
-                      Download {previewData?.type === "audio" ? "MP3" : previewData?.type === "image" ? "Image" : "Video"}
+                      Download{" "}
+                      {previewData?.type === "audio"
+                        ? "MP3"
+                        : previewData?.type === "image"
+                        ? "Image"
+                        : "Video"}
                     </Button>
                   </div>
                 </CardTitle>

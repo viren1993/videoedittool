@@ -15,15 +15,15 @@ export async function POST(request: NextRequest) {
       id: nanoid(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      ...body
+      ...body,
     };
-    
-    // In a real app, save to DB here
-    console.log("Saving template:", newTemplate.id);
-    
+
     return NextResponse.json(newTemplate, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to create template" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create template" },
+      { status: 500 }
+    );
   }
 }
 
@@ -31,22 +31,25 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { id, ...updateData } = body;
-    
+
     if (!id) {
-      return NextResponse.json({ error: "ID is required for update" }, { status: 400 });
+      return NextResponse.json(
+        { error: "ID is required for update" },
+        { status: 400 }
+      );
     }
 
     const updatedTemplate = {
       id,
       ...updateData,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
-    
-    // In a real app, update DB here
-    console.log("Updating template:", id);
-    
+
     return NextResponse.json(updatedTemplate, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update template" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update template" },
+      { status: 500 }
+    );
   }
 }

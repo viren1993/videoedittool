@@ -92,10 +92,10 @@ export default function Templates() {
               <Card key={template.id} className="overflow-hidden">
                 <CardHeader className="pt-1 px-2">
                   <CardTitle className="text-lg truncate">
-                    {template.name}
+                    {template.template_name}
                   </CardTitle>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>{template.aspectRatio}</span>
+                    <span>{template.template_json?.aspectRatio}</span>
                     {template.category && (
                       <>
                         <span>•</span>
@@ -106,10 +106,10 @@ export default function Templates() {
                 </CardHeader>
                 <CardContent className="px-2">
                   <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
-                    {template.thumbnail ? (
+                    {template.template_json?.thumbnail ? (
                       <img
-                        src={template.thumbnail}
-                        alt={template.name}
+                        src={template.template_json.thumbnail}
+                        alt={template.template_name}
                         className="w-full h-full object-cover rounded-md"
                       />
                     ) : (
@@ -117,7 +117,7 @@ export default function Templates() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Created {formatDate(template.createdAt)}
+                    Created {formatDate(template.created_at)}
                   </p>
                 </CardContent>
                 <CardFooter className="flex gap-2">
