@@ -105,7 +105,16 @@ const useStore = create<ITimelineStore>((set) => ({
   },
   setPlayerRef: (playerRef: React.RefObject<PlayerRef> | null) =>
     set({ playerRef }),
-  setSceneMoveableRef: (ref) => set({ sceneMoveableRef: ref })
+  setSceneMoveableRef: (ref) => set({ sceneMoveableRef: ref }),
+  resetStore: () => set({
+    duration: 1000,
+    tracks: [],
+    trackItemIds: [],
+    transitionIds: [],
+    transitionsMap: {},
+    trackItemsMap: {},
+    activeIds: [],
+  })
 }));
 
 export default useStore;
