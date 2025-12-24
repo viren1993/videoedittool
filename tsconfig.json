@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "target": "es5",
     "lib": [
       "dom",
@@ -8,8 +8,6 @@
       "esnext"
     ],
     "allowJs": true,
-    "declaration": false,
-    "declarationMap": false,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
@@ -27,31 +25,10 @@
     ],
     "paths": {
       "@/*": [
-        "*"
+        "src/*"
       ],
       "@public/*": [
-        "../public/*"
-      ],
-      "@designcombo/timeline": [
-        "../packages/designcombo/timeline/dist/index.d.ts"
-      ],
-      "@designcombo/animations": [
-        "../packages/designcombo/animations/dist"
-      ],
-      "@designcombo/events": [
-        "../packages/designcombo/events/dist"
-      ],
-      "@designcombo/frames": [
-        "../packages/designcombo/frames/dist"
-      ],
-      "@designcombo/state": [
-        "../packages/designcombo/state/dist"
-      ],
-      "@designcombo/types": [
-        "../packages/designcombo/types/dist"
-      ],
-      "@designcombo/transitions": [
-        "../packages/designcombo/transitions/dist"
+        "public/*"
       ]
     }
   },
@@ -62,7 +39,6 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "cypress"
-  ],
+    "node_modules"
+  ]
 }

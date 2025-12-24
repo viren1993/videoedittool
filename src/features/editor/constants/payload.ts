@@ -5,7 +5,7 @@ export const TEXT_ADD_PAYLOAD = {
   id: generateId(),
   display: {
     from: 0,
-    to: 5000,
+    to: 5000
   },
   type: "text",
   details: {
@@ -23,7 +23,7 @@ export const TEXT_ADD_PAYLOAD = {
       color: "#ffffff",
       x: 0,
       y: 0,
-      blur: 0,
-    },
-  },
+      blur: 0
+    }
+  }
 };

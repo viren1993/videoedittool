@@ -13,6 +13,7 @@ export interface TemplateType {
     end: number;
   };
   template_json: any;
+  status?: string;
   created_at: string;
   updated_at: string;
 }
