@@ -1,0 +1,45 @@
+{
+  "name": "@designcombo/timeline",
+  "version": "5.4.2",
+  "private": false,
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.umd.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.es.js",
+      "require": "./dist/index.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "devDependencies": {
+    "@types/lodash-es": "^4.17.12",
+    "@types/node": "^20.11.24",
+    "rollup-plugin-peer-deps-external": "^2.2.4",
+    "typescript": "5.3.3",
+    "vite": "^5.2.0",
+    "vite-plugin-dts": "^3.9.1",
+    "@designcombo/typescript-config": "0.0.0"
+  },
+  "dependencies": {
+    "fabric": "^6.3.0",
+    "immer": "^10.1.1",
+    "lodash-es": "^4.17.21",
+    "microdiff": "^1.4.0",
+    "nanoid": "^5.0.7"
+  },
+  "peerDependencies": {
+    "@types/lodash-es": "^4.17.12",
+    "@designcombo/events": "^1.0.2",
+    "@designcombo/types": "5.4.2"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write ."
+  }
+}

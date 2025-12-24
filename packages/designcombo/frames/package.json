@@ -1,0 +1,49 @@
+{
+  "name": "@designcombo/frames",
+  "version": "0.0.3",
+  "private": false,
+  "repository": "https://github.com/designcombo/thumbnails",
+  "keywords": [
+    "webcodecs"
+  ],
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "module": "dist/frames.js",
+  "main": "dist/frames.umd.cjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/frames.js",
+      "require": "./dist/frames.umd.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@webav/mp4box.js": "0.5.3-fenghen",
+    "m3u8-parser": "^7.1.0",
+    "mp4box": "^0.5.2",
+    "opfs-tools": "^0.6.1",
+    "wave-resampler": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/dom-mediacapture-transform": "^0.1.5",
+    "@types/dom-webcodecs": "^0.1.11",
+    "@vitest/browser": "^1.6.0",
+    "@vitest/coverage-istanbul": "^1.6.0",
+    "vite": "^5.2.11",
+    "vite-plugin-dts": "^4.2.3",
+    "vitest": "^1.6.0",
+    "webdriverio": "^8.39.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "vitest --config test-vite.config.ts",
+    "ci:test": "vitest --config test-vite.config.ts run",
+    "test:coverage": "vitest run --coverage",
+    "build": "vite build && tsc -p build.tsconfig.json --outDir dist"
+  }
+}

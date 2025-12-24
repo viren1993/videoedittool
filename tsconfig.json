@@ -1,44 +1,68 @@
 {
-	"compilerOptions": {
-		"baseUrl": ".",
-		"target": "es5",
-		"lib": [
-			"dom",
-			"dom.iterable",
-			"esnext"
-		],
-		"allowJs": true,
-		"skipLibCheck": true,
-		"strict": true,
-		"noEmit": true,
-		"esModuleInterop": true,
-		"module": "esnext",
-		"moduleResolution": "bundler",
-		"resolveJsonModule": true,
-		"isolatedModules": true,
-		"jsx": "preserve",
-		"incremental": true,
-		"plugins": [
-			{
-				"name": "next"
-			}
-		],
-		"paths": {
-			"@/*": [
-				"src/*"
-			],
-			"@public/*": [
-				"public/*"
-			]
-		}
-	},
-	"include": [
-		"next-env.d.ts",
-		"**/*.ts",
-		"**/*.tsx",
-		".next/types/**/*.ts"
-	],
-	"exclude": [
-		"node_modules"
-	]
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "target": "es5",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "declaration": false,
+    "declarationMap": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "*"
+      ],
+      "@public/*": [
+        "../public/*"
+      ],
+      "@designcombo/timeline": [
+        "../packages/designcombo/timeline/dist/index.d.ts"
+      ],
+      "@designcombo/animations": [
+        "../packages/designcombo/animations/dist"
+      ],
+      "@designcombo/events": [
+        "../packages/designcombo/events/dist"
+      ],
+      "@designcombo/frames": [
+        "../packages/designcombo/frames/dist"
+      ],
+      "@designcombo/state": [
+        "../packages/designcombo/state/dist"
+      ],
+      "@designcombo/types": [
+        "../packages/designcombo/types/dist"
+      ],
+      "@designcombo/transitions": [
+        "../packages/designcombo/transitions/dist"
+      ]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "cypress"
+  ],
 }

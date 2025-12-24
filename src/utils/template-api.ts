@@ -16,13 +16,7 @@ export interface TemplatePayload {
     start: number;
     end: number;
   };
-  template_json: {
-    design: any;
-    options: {
-      fps: number;
-      format: string;
-    };
-  };
+  template_json: any;
   isPrivate?: boolean;
 }
 
