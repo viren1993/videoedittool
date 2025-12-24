@@ -231,21 +231,6 @@ export default function TemplateEditPage() {
     );
   }
 
-  // Check for blob URLs that weren't replaced
-  const checkForBlobUrls = (data: any) => {
-    if (!data || typeof data !== "object") return;
-
-    if (data.trackItemsMap && typeof data.trackItemsMap === "object") {
-      Object.values(data.trackItemsMap).forEach((item: any) => {
-        if (item?.details?.src?.startsWith?.("blob:")) {
-          console.warn("⚠️ Found blob URL in templateData:", item.details.src);
-        }
-      });
-    }
-  };
-
-  checkForBlobUrls(templateData);
-
   // Prepare editor design
   const editorDesign = {
     id: currentTemplate.id,

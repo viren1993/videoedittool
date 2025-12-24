@@ -70,11 +70,8 @@ export default function Navbar({
     dispatch(HISTORY_REDO);
   };
 
-  // const handleCreateProject = async () => {};
-
   const debouncedSetProjectName = useCallback(
     debounce((name: string) => {
-      console.log("Debounced setProjectName:", name);
       setProjectName(name);
     }, 2000), // 2 seconds delay
     []
@@ -148,14 +145,10 @@ export default function Navbar({
             ? "Template updated successfully!"
             : "Template saved successfully!",
           {
-            description: `${savedTemplate.name} with ${customerFields.length} customer fields`,
+            description: `${savedTemplate.template_name} with ${customerFields.length} customer fields`,
           }
         );
-
-        // Clear current template after save to prevent stale data
         setCurrentTemplate(null);
-
-        // Redirect to templates page after successful save
         router.push("/company/templates");
       } else {
         toast.error("Failed to save template");
@@ -170,6 +163,7 @@ export default function Navbar({
       setIsSaving(false);
     }
   };
+
   return (
     <div
       style={{

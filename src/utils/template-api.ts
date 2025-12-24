@@ -16,13 +16,7 @@ export interface TemplatePayload {
     start: number;
     end: number;
   };
-  template_json: {
-    design: any;
-    options: {
-      fps: number;
-      format: string;
-    };
-  };
+  template_json: any;
   isPrivate?: boolean;
 }
 
@@ -94,7 +88,7 @@ async function uploadBlobUrl(
 
 /**
  * Extract base media URLs from template data and upload blob URLs
- * Returns arrays of all media URLs for each type
+ * Returns arrays of all media URLs for each type and a mapping of blob URLs to permanent URLs
  */
 export async function extractAndUploadMediaUrls(
   templateData: any,
@@ -103,11 +97,13 @@ export async function extractAndUploadMediaUrls(
   base_video_url: string[];
   base_image_url: string[];
   base_audio_url: string[];
+  urlMapping: Map<string, string>; // Maps blob URLs to permanent URLs
 }> {
   const trackItemsMap = templateData.trackItemsMap || {};
   const baseVideoUrls: string[] = [];
   const baseImageUrls: string[] = [];
   const baseAudioUrls: string[] = [];
+  const urlMapping = new Map<string, string>(); // blob URL -> permanent URL
 
   // Collect all unique media URLs by type
   const videoUrls = new Set<string>();
@@ -139,15 +135,20 @@ export async function extractAndUploadMediaUrls(
         const uploadedUrl = await uploadBlobUrl(src, "video", accessToken);
         if (uploadedUrl) {
           baseVideoUrls.push(uploadedUrl);
+          urlMapping.set(src, uploadedUrl); // Map blob URL to permanent URL
         } else {
           baseVideoUrls.push(src); // Fallback to blob URL
+          urlMapping.set(src, src); // Map to itself
         }
       } else {
         baseVideoUrls.push(src);
+        // For non-blob URLs, map to themselves
+        urlMapping.set(src, src);
       }
     } catch (error) {
       console.warn("Failed to upload video blob, using original URL:", error);
       baseVideoUrls.push(src);
+      urlMapping.set(src, src);
     }
   }
 
@@ -158,15 +159,19 @@ export async function extractAndUploadMediaUrls(
         const uploadedUrl = await uploadBlobUrl(src, "image", accessToken);
         if (uploadedUrl) {
           baseImageUrls.push(uploadedUrl);
+          urlMapping.set(src, uploadedUrl); // Map blob URL to permanent URL
         } else {
           baseImageUrls.push(src);
+          urlMapping.set(src, src);
         }
       } else {
         baseImageUrls.push(src);
+        urlMapping.set(src, src);
       }
     } catch (error) {
       console.warn("Failed to upload image blob, using original URL:", error);
       baseImageUrls.push(src);
+      urlMapping.set(src, src);
     }
   }
 
@@ -177,15 +182,19 @@ export async function extractAndUploadMediaUrls(
         const uploadedUrl = await uploadBlobUrl(src, "audio", accessToken);
         if (uploadedUrl) {
           baseAudioUrls.push(uploadedUrl);
+          urlMapping.set(src, uploadedUrl); // Map blob URL to permanent URL
         } else {
           baseAudioUrls.push(src);
+          urlMapping.set(src, src);
         }
       } else {
         baseAudioUrls.push(src);
+        urlMapping.set(src, src);
       }
     } catch (error) {
       console.warn("Failed to upload audio blob, using original URL:", error);
       baseAudioUrls.push(src);
+      urlMapping.set(src, src);
     }
   }
 
@@ -193,7 +202,35 @@ export async function extractAndUploadMediaUrls(
     base_video_url: baseVideoUrls,
     base_image_url: baseImageUrls,
     base_audio_url: baseAudioUrls,
+    urlMapping,
   };
+}
+
+/**
+ * Replace blob URLs in trackItemsMap with permanent URLs using the mapping
+ */
+function replaceBlobUrlsInTrackItemsMap(
+  trackItemsMap: any,
+  urlMapping: Map<string, string>
+): any {
+  const newTrackItemsMap = JSON.parse(JSON.stringify(trackItemsMap));
+
+  for (const [itemId, item] of Object.entries(newTrackItemsMap)) {
+    const trackItem = item as any;
+    if (!trackItem.details?.src) continue;
+
+    const src = trackItem.details.src;
+    const permanentUrl = urlMapping.get(src);
+
+    if (permanentUrl && permanentUrl !== src) {
+      console.log(
+        `🔄 Replacing blob URL in trackItemsMap [${itemId}]:\n  From: ${src}\n  To: ${permanentUrl}`
+      );
+      trackItem.details.src = permanentUrl;
+    }
+  }
+
+  return newTrackItemsMap;
 }
 
 /**
@@ -257,21 +294,27 @@ export async function transformToTemplateFormat(
   accessToken: string,
   category?: string
 ): Promise<TemplatePayload> {
-  // Extract and upload media URLs
+  // Extract and upload media URLs (this also creates the URL mapping)
   const mediaUrls = await extractAndUploadMediaUrls(templateData, accessToken);
+
+  // Replace blob URLs in trackItemsMap with permanent URLs
+  const trackItemsMapWithPermanentUrls = replaceBlobUrlsInTrackItemsMap(
+    templateData.trackItemsMap || {},
+    mediaUrls.urlMapping
+  );
 
   // Calculate duration and trim times
   const duration = calculateDuration(templateData);
   const trim = extractTrimTimes(templateData);
 
-  // Format template_json according to API structure
+  // Format template_json according to API structure with permanent URLs
   const templateJson = {
     design: {
       id: templateData.id || generateId(),
       fps: templateData.fps || 30,
       size: templateData.size || { width: 1080, height: 1920 },
       tracks: templateData.tracks || [],
-      trackItemsMap: templateData.trackItemsMap || {},
+      trackItemsMap: trackItemsMapWithPermanentUrls, // Use trackItemsMap with permanent URLs
       trackItemIds: templateData.trackItemIds || [],
       transitionsMap: templateData.transitionsMap || {},
       transitionIds: templateData.transitionIds || [],

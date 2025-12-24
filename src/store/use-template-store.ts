@@ -11,6 +11,7 @@ import type { TemplateType } from "@/features/templates/type";
 
 /**
  * Replace blob URLs in template data with permanent URLs from base arrays
+ * Uses a more reliable matching strategy: creates a mapping from blob URLs to permanent URLs
  */
 function replaceBlobUrlsWithPermanentUrls(
   templateData: any,
@@ -25,9 +26,14 @@ function replaceBlobUrlsWithPermanentUrls(
   const newData = JSON.parse(JSON.stringify(templateData));
   const trackItemsMap = newData.trackItemsMap || {};
 
-  let videoIndex = 0;
-  let imageIndex = 0;
-  let audioIndex = 0;
+  // Create a mapping of blob URLs to permanent URLs by collecting all blob URLs first
+  // and matching them with the base arrays in order
+  const blobToPermanentMap = new Map<string, string>();
+
+  // Collect all blob URLs by type
+  const videoBlobs: string[] = [];
+  const imageBlobs: string[] = [];
+  const audioBlobs: string[] = [];
 
   for (const [itemId, item] of Object.entries(trackItemsMap)) {
     const trackItem = item as any;
@@ -37,36 +43,63 @@ function replaceBlobUrlsWithPermanentUrls(
     const isBlob = src.startsWith("blob:");
 
     if (isBlob) {
-      if (trackItem.type === "video" && videoIndex < baseVideoUrls.length) {
+      if (trackItem.type === "video") {
+        videoBlobs.push(src);
+      } else if (trackItem.type === "image") {
+        imageBlobs.push(src);
+      } else if (trackItem.type === "audio") {
+        audioBlobs.push(src);
+      }
+    }
+  }
+
+  // Map blob URLs to permanent URLs by index
+  videoBlobs.forEach((blobUrl, index) => {
+    if (index < baseVideoUrls.length) {
+      blobToPermanentMap.set(blobUrl, baseVideoUrls[index]);
+      console.log(
+        `🔄 Mapping video blob [${index}]:\n  From: ${blobUrl}\n  To: ${baseVideoUrls[index]}`
+      );
+    }
+  });
+
+  imageBlobs.forEach((blobUrl, index) => {
+    if (index < baseImageUrls.length) {
+      blobToPermanentMap.set(blobUrl, baseImageUrls[index]);
+      console.log(
+        `🔄 Mapping image blob [${index}]:\n  From: ${blobUrl}\n  To: ${baseImageUrls[index]}`
+      );
+    }
+  });
+
+  audioBlobs.forEach((blobUrl, index) => {
+    if (index < baseAudioUrls.length) {
+      blobToPermanentMap.set(blobUrl, baseAudioUrls[index]);
+      console.log(
+        `🔄 Mapping audio blob [${index}]:\n  From: ${blobUrl}\n  To: ${baseAudioUrls[index]}`
+      );
+    }
+  });
+
+  // Replace blob URLs in trackItemsMap using the mapping
+  for (const [itemId, item] of Object.entries(trackItemsMap)) {
+    const trackItem = item as any;
+    if (!trackItem.details?.src) continue;
+
+    const src = trackItem.details.src;
+    const isBlob = src.startsWith("blob:");
+
+    if (isBlob) {
+      const permanentUrl = blobToPermanentMap.get(src);
+      if (permanentUrl) {
         const oldSrc = trackItem.details.src;
-        trackItem.details.src = baseVideoUrls[videoIndex];
+        trackItem.details.src = permanentUrl;
         console.log(
-          `🔄 Replaced video blob URL [${itemId}]:\n  From: ${oldSrc}\n  To: ${baseVideoUrls[videoIndex]}`
+          `✅ Replaced ${trackItem.type} blob URL [${itemId}]:\n  From: ${oldSrc}\n  To: ${permanentUrl}`
         );
-        videoIndex++;
-      } else if (
-        trackItem.type === "image" &&
-        imageIndex < baseImageUrls.length
-      ) {
-        const oldSrc = trackItem.details.src;
-        trackItem.details.src = baseImageUrls[imageIndex];
-        console.log(
-          `🔄 Replaced image blob URL [${itemId}]:\n  From: ${oldSrc}\n  To: ${baseImageUrls[imageIndex]}`
-        );
-        imageIndex++;
-      } else if (
-        trackItem.type === "audio" &&
-        audioIndex < baseAudioUrls.length
-      ) {
-        const oldSrc = trackItem.details.src;
-        trackItem.details.src = baseAudioUrls[audioIndex];
-        console.log(
-          `🔄 Replaced audio blob URL [${itemId}]:\n  From: ${oldSrc}\n  To: ${baseAudioUrls[audioIndex]}`
-        );
-        audioIndex++;
       } else {
         console.warn(
-          `⚠️ No permanent URL available for ${trackItem.type} blob [${itemId}]: ${src}`
+          `⚠️ No permanent URL mapping found for ${trackItem.type} blob [${itemId}]: ${src}`
         );
       }
     } else {
@@ -76,12 +109,6 @@ function replaceBlobUrlsWithPermanentUrls(
       );
     }
   }
-
-  console.log("✅ Blob URL replacement complete:", {
-    videosReplaced: videoIndex,
-    imagesReplaced: imageIndex,
-    audiosReplaced: audioIndex,
-  });
 
   return newData;
 }
@@ -119,7 +146,6 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
   fetchTemplates: async (accessToken: string) => {
     set({ loading: true, error: null });
     try {
-      console.log("Fetching all templates from API");
       const apiTemplates = await getTemplatesFromAPI(accessToken);
 
       if (!Array.isArray(apiTemplates)) {
