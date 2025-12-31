@@ -116,6 +116,7 @@ export default function PasswordReset() {
 
       <Dialog.Content maxWidth="600px">
         <Dialog.Title>Change Password</Dialog.Title>
+        <hr className="my-2" />
         <Form<UpdatedPasswordInput>
           onSubmit={onSubmit}
           validationSchema={resetPasswordSchema}

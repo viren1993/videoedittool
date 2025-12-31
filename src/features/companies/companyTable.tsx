@@ -15,6 +15,7 @@ import { Dialog, Flex, IconButton } from "@radix-ui/themes";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SquarePen } from "lucide-react";
+import ForgotPasswordCompanie from "./forgotPasswordCompanie";
 
 type Company = {
   company_name: string;
@@ -27,7 +28,7 @@ type Company = {
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface ActionCellRendererProps extends ICellRendererParams<Company> {
-  setRefreshApi: React.Dispatch<React.SetStateAction<boolean>>;
+  setRefreshApi: () => void;
 }
 
 const ActionCellRenderer = (props: ActionCellRendererProps) => {
@@ -49,13 +50,17 @@ const ActionCellRenderer = (props: ActionCellRendererProps) => {
         />
       </Dialog.Root>
       <DeleteCompanie data={props?.data} setRefreshApi={props.setRefreshApi} />
+      <ForgotPasswordCompanie
+        data={props?.data}
+        setRefreshApi={props.setRefreshApi}
+      />
     </div>
   );
 };
 
 interface CompanyTableProps {
   data: Company[];
-  setRefreshApi: React.Dispatch<React.SetStateAction<boolean>>;
+  setRefreshApi: () => void;
 }
 
 export default function CompanyTable({
@@ -76,7 +81,9 @@ export default function CompanyTable({
     },
     {
       headerName: "Actions",
-      cellRenderer: ActionCellRenderer,
+      cellRenderer: (params: any) => (
+        <ActionCellRenderer {...params} setRefreshApi={setRefreshApi} />
+      ),
       sortable: false,
       filter: false,
       maxWidth: 200,

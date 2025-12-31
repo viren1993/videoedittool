@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 interface CompanieDeleteProps {
   data?: Partial<Company>;
-  setRefreshApi: (open: boolean) => void;
+  setRefreshApi: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function DeleteCompanie({
@@ -31,9 +31,9 @@ export default function DeleteCompanie({
 
       if (res.status === 200) {
         toast.success(
-          <Text className="bold">Company deleted successfully</Text>
+          <Text className="font-semibold">Company deleted successfully</Text>
         );
-        // setRefreshApi(true);
+        setRefreshApi((prev) => !prev);
       }
     } catch (error) {
       console.error(error);

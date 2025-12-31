@@ -16,6 +16,7 @@ export const routes = {
     profile: "company/profile",
     media: "company/media",
     customer: "company/customer",
+    bulkCustomerCreate: "company/customer/bulk-create",
     templates: "company/templates", // List of templates
     templatesCreate: "company/templates/create", // Create new template
     templateEdit: (id: string) => `company/templates/${id}/edit`, // Edit existing template

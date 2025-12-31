@@ -97,10 +97,7 @@ export default function Templates() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>{template.template_json?.aspectRatio}</span>
                     {template.category && (
-                      <>
-                        <span>•</span>
-                        <span>{template.category}</span>
-                      </>
+                      <span>Category : {template.category} </span>
                     )}
                   </div>
                 </CardHeader>

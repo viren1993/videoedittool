@@ -1,11 +1,13 @@
 import { Flex, Grid } from "@radix-ui/themes";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/page-header";
 import { metaObject } from "@/config/site.config";
 import Customer from "@/features/customer";
 import CreateCustomer from "@/features/customer/createCustomer";
 
 export const metadata = {
-  ...metaObject("Customer List"),
+  ...metaObject("Bulk Customer Create"),
 };
 
 const pageHeader = {
@@ -30,7 +32,14 @@ export default function CustomerPage() {
           title={pageHeader.title}
           breadcrumb={pageHeader.breadcrumb}
         />
-        <CreateCustomer />
+        <Flex gap="2" align={"start"}>
+          <Button className="cursor-pointer">
+            <Link href="/company/customer/bulk-create">
+              Add Customer in Bulk
+            </Link>
+          </Button>
+          <CreateCustomer />
+        </Flex>
       </Flex>
       <Customer />
     </Grid>

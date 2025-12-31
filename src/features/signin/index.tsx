@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
+
 import { signIn } from "next-auth/react";
 import { SubmitHandler } from "react-hook-form";
 import { z } from "zod";
@@ -12,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Form } from "@/components/ui/form";
 import { Card } from "@/components/ui/card";
 import { DATA_API } from "@/config/constants";
+import logo from "../../../public/delta-logo.png";
 
 export const loginSchema = z.object({
   username: z.string().min(1, { message: "Email is required" }),
@@ -92,7 +95,13 @@ export default function Signin() {
             }}
           >
             <Flex direction="column" gap="4" align="center">
-              <Avatar size="5" fallback="LG" radius="full" mb="2" />
+              <Image
+                src={logo}
+                alt="Logo"
+                width={100}
+                height={70}
+                className="mb-2"
+              />
               <Text size="5" mb="20px" weight="bold">
                 Sign In to Your Account
               </Text>

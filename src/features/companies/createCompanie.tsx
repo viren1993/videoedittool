@@ -94,7 +94,7 @@ export default function CreateCustomer({
         toast.success("Company created successfully!");
         reset();
         setOpen(false);
-        setRefreshApi(true);
+        setRefreshApi((prev) => !prev);
       }
     } catch (err: any) {
       const errorMessage =

@@ -34,6 +34,10 @@ export default function Companies() {
   const [companies, setCompanies] = useState(null as CompanyListProps[] | any);
   const [refreshApi, setRefreshApi] = useState<boolean>(false);
 
+  const handleRefresh = useCallback(() => {
+    setRefreshApi((prev) => !prev);
+  }, []);
+
   useEffect(() => {
     const fetchCompany = async () => {
       setIsLoading(true);
@@ -69,10 +73,6 @@ export default function Companies() {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, refreshApi]);
-
-  const handleRefresh = useCallback(() => {
-    setRefreshApi((prev) => !prev);
-  }, []);
 
   return (
     <>
