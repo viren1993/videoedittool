@@ -30,7 +30,6 @@ import { useIsLargeScreen } from "@/hooks/use-media-query";
 import { ITrackItem } from "@designcombo/types";
 import useLayoutStore from "./store/use-layout-store";
 import ControlItemHorizontal from "./control-item-horizontal";
-import { design } from "./mock";
 
 const stateManager = new StateManager({
   size: {
@@ -39,7 +38,15 @@ const stateManager = new StateManager({
   },
 });
 
-const Editor = ({ tempId, id, initialDesign }: { tempId?: string; id?: string; initialDesign?: any }) => {
+const Editor = ({
+  tempId,
+  id,
+  initialDesign,
+}: {
+  tempId?: string;
+  id?: string;
+  initialDesign?: any;
+}) => {
   const [projectName, setProjectName] = useState<string>("Untitled video");
   const timelinePanelRef = useRef<ImperativePanelHandle>(null);
   const sceneRef = useRef<SceneRef>(null);
@@ -58,10 +65,6 @@ const Editor = ({ tempId, id, initialDesign }: { tempId?: string; id?: string; i
   useTimelineEvents();
 
   const { setCompactFonts, setFonts } = useDataState();
-
-  // useEffect(() => {
-  //   dispatch(DESIGN_LOAD, { payload: design });
-  // }, []);
 
   useEffect(() => {
     setCompactFonts(getCompactFontData(FONTS));

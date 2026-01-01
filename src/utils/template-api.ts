@@ -21,6 +21,38 @@ export interface TemplatePayload {
 }
 
 /**
+ * Normalize media file URL from API response
+ * Converts relative paths like "./media/..." to full URLs
+ * Example: "./media/691c6d686ad325a3e62e7e75/file.jpg"
+ *          -> "http://127.0.0.1:8000/media/691c6d686ad325a3e62e7e75/file.jpg"
+ */
+function normalizeMediaFileUrl(fileUrl: string): string {
+  if (!fileUrl || typeof fileUrl !== "string") {
+    return fileUrl;
+  }
+
+  // If already a full URL, return as is
+  if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+    // Check for duplicate /media/./media/ pattern and fix it
+    return fileUrl.replace(/\/media\/\.\/media\//g, "/media/");
+  }
+
+  // Remove ./media/ prefix if it exists
+  let normalized = fileUrl.replace(/^\.\/media\//, "");
+
+  // Remove /media/ prefix if it exists (for absolute paths)
+  normalized = normalized.replace(/^\/media\//, "");
+
+  // Construct full URL
+  if (!DATA_API) {
+    console.warn("DATA_API not configured, returning normalized path");
+    return normalized;
+  }
+
+  return `${DATA_API}/media/${normalized}`;
+}
+
+/**
  * Upload a blob URL to get a permanent URL using DATA_API
  */
 
@@ -76,7 +108,8 @@ async function uploadBlobUrl(
       return null;
     }
 
-    return `${DATA_API}/media/${fileUrl}`;
+    // Normalize the file URL (removes ./media/ prefix and constructs full URL)
+    return normalizeMediaFileUrl(fileUrl);
   } catch (error: any) {
     console.error(
       `Error uploading blob URL ${blobUrl}:`,
@@ -141,9 +174,11 @@ export async function extractAndUploadMediaUrls(
           urlMapping.set(src, src); // Map to itself
         }
       } else {
-        baseVideoUrls.push(src);
-        // For non-blob URLs, map to themselves
-        urlMapping.set(src, src);
+        // Normalize non-blob URLs to ensure proper format
+        const normalizedSrc = normalizeMediaFileUrl(src);
+        baseVideoUrls.push(normalizedSrc);
+        // For non-blob URLs, map to normalized version
+        urlMapping.set(src, normalizedSrc);
       }
     } catch (error) {
       console.warn("Failed to upload video blob, using original URL:", error);
@@ -165,8 +200,10 @@ export async function extractAndUploadMediaUrls(
           urlMapping.set(src, src);
         }
       } else {
-        baseImageUrls.push(src);
-        urlMapping.set(src, src);
+        // Normalize non-blob URLs to ensure proper format
+        const normalizedSrc = normalizeMediaFileUrl(src);
+        baseImageUrls.push(normalizedSrc);
+        urlMapping.set(src, normalizedSrc);
       }
     } catch (error) {
       console.warn("Failed to upload image blob, using original URL:", error);
@@ -188,8 +225,10 @@ export async function extractAndUploadMediaUrls(
           urlMapping.set(src, src);
         }
       } else {
-        baseAudioUrls.push(src);
-        urlMapping.set(src, src);
+        // Normalize non-blob URLs to ensure proper format
+        const normalizedSrc = normalizeMediaFileUrl(src);
+        baseAudioUrls.push(normalizedSrc);
+        urlMapping.set(src, normalizedSrc);
       }
     } catch (error) {
       console.warn("Failed to upload audio blob, using original URL:", error);
@@ -223,10 +262,11 @@ function replaceBlobUrlsInTrackItemsMap(
     const permanentUrl = urlMapping.get(src);
 
     if (permanentUrl && permanentUrl !== src) {
-      console.log(
-        `🔄 Replacing blob URL in trackItemsMap [${itemId}]:\n  From: ${src}\n  To: ${permanentUrl}`
-      );
-      trackItem.details.src = permanentUrl;
+      // Normalize the permanent URL to ensure proper format
+      trackItem.details.src = normalizeMediaFileUrl(permanentUrl);
+    } else if (!permanentUrl && !src.startsWith("blob:")) {
+      // Normalize non-blob URLs that aren't in the mapping
+      trackItem.details.src = normalizeMediaFileUrl(src);
     }
   }
 

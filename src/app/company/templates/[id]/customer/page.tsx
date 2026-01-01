@@ -1,27 +1,30 @@
-import { Button, Flex, Grid } from "@radix-ui/themes";
 import PageHeader from "@/components/page-header";
 import { metaObject } from "@/config/site.config";
-import Templates from "@/features/templates";
-import Link from "next/link";
+import Customer from "@/features/templates/customer";
+import { Flex, Grid } from "@radix-ui/themes";
 
 export const metadata = {
-  ...metaObject("Customer List"),
+  ...metaObject("Template Customer Links"),
 };
 
 const pageHeader = {
-  title: "Templates List",
+  title: "Template Customer Links",
   breadcrumb: [
     {
       href: "/company",
       name: "Home",
     },
     {
+      href: "/company/templates",
       name: "Templates List",
+    },
+    {
+      name: "Template Customer Links",
     },
   ],
 };
 
-export default function TemplatesPage() {
+export default function TemplateCustomer() {
   return (
     <Grid className="container flex-1 mx-auto p-8">
       <Flex justify={"between"} align={"start"}>
@@ -30,11 +33,8 @@ export default function TemplatesPage() {
           title={pageHeader.title}
           breadcrumb={pageHeader.breadcrumb}
         />
-        <Button variant="solid">
-          <Link href="/company/templates/create">Create Templates</Link>
-        </Button>
       </Flex>
-      <Templates />
+      <Customer />
     </Grid>
   );
 }

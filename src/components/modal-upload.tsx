@@ -24,6 +24,35 @@ type ModalUploadProps = {
   onUploadComplete?: (media: MediaUploadResponse[]) => void;
 };
 
+/**
+ * Normalize media file URL from API response
+ * Converts relative paths like "./media/..." to full URLs
+ */
+function normalizeMediaFileUrl(fileUrl: string): string {
+  if (!fileUrl || typeof fileUrl !== "string") {
+    return fileUrl;
+  }
+
+  // If already a full URL, check for duplicate /media/./media/ pattern and fix it
+  if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+    return fileUrl.replace(/\/media\/\.\/media\//g, "/media/");
+  }
+
+  // Remove ./media/ prefix if it exists
+  let normalized = fileUrl.replace(/^\.\/media\//, "");
+  
+  // Remove /media/ prefix if it exists (for absolute paths)
+  normalized = normalized.replace(/^\/media\//, "");
+
+  // Construct full URL
+  if (!DATA_API) {
+    console.warn("DATA_API not configured, returning normalized path");
+    return normalized;
+  }
+
+  return `${DATA_API}/media/${normalized}`;
+}
+
 export const extractVideoThumbnail = (file: File) => {
   return new Promise<string>((resolve) => {
     const video = document.createElement("video");
@@ -106,10 +135,11 @@ const ModalUpload: React.FC<ModalUploadProps> = ({
         }
 
         // Transform to MediaUploadResponse format
+        // Normalize file_url to convert ./media/... to full URL
         const media: MediaUploadResponse = {
           id: mediaData.id || mediaData._id,
           company_id: mediaData.company_id,
-          file_url: mediaData.file_url,
+          file_url: normalizeMediaFileUrl(mediaData.file_url),
           file_type: mediaData.file_type as
             | "image"
             | "video"

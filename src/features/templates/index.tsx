@@ -1,13 +1,13 @@
 "use client";
 
-import { Card, Grid } from "@radix-ui/themes";
+import { Button, Card, Flex, Grid, Text } from "@radix-ui/themes";
 import {
   Pencil,
   Trash2,
-  Globe,
   Loader2,
   Video,
   ExternalLink,
+  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -16,28 +16,19 @@ import { toast } from "sonner";
 import Link from "next/link";
 
 import { useTemplateStore } from "@/store/use-template-store";
-import {
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { extractFieldsFromMetadata } from "@/utils/template-storage";
+import { CardTitle } from "@/components/ui/card";
 import { routes } from "@/config/routes";
-import { Button } from "@/components/ui/button";
 
 export default function Templates() {
   const router = useRouter();
   const { data: session } = useSession();
   const { templates, loading, error, fetchTemplates, deleteTemplate } =
     useTemplateStore();
-
   useEffect(() => {
     const accessToken = session?.user?.access_token;
     if (accessToken) {
       fetchTemplates(accessToken);
     } else if (session === null) {
-      // Session loaded but no user
       router.push("/signin");
     }
   }, [session, fetchTemplates, router]);
@@ -90,18 +81,19 @@ export default function Templates() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {templates.map((template) => (
               <Card key={template.id} className="overflow-hidden">
-                <CardHeader className="pt-1 px-2">
+                <Grid className="pt-1 pb-2">
                   <CardTitle className="text-lg truncate">
                     {template.template_name}
                   </CardTitle>
+                  <Text as="p" className="text-sm text-gray-400">
+                    Category :{" "}
+                    <span className="text-gray-300 ">{template.category}</span>
+                  </Text>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span>{template.template_json?.aspectRatio}</span>
-                    {template.category && (
-                      <span>Category : {template.category} </span>
-                    )}
                   </div>
-                </CardHeader>
-                <CardContent className="px-2">
+                </Grid>
+                <Grid>
                   <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
                     {template.template_json?.thumbnail ? (
                       <img
@@ -113,33 +105,67 @@ export default function Templates() {
                       <Video className="h-12 w-12 text-muted-foreground" />
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-muted-foreground mt-2 mb-2">
                     Created {formatDate(template.created_at)}
                   </p>
-                </CardContent>
-                <CardFooter className="flex gap-2">
+                </Grid>
+                <Grid columns="2" className="gap-2 mb-2">
                   <Link
                     href={`/company/templates/${template.id}/edit`}
                     className="flex-1"
                   >
-                    <Button className="w-full">
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Edit
+                    <Button
+                      style={{
+                        width: "100%",
+                      }}
+                      color="indigo"
+                      variant="solid"
+                    >
+                      <Pencil className="h-4 w-4" /> Edit
                     </Button>
                   </Link>
+                  <Link
+                    href={`/company/templates/${template.id}/customer`}
+                    className="flex-1"
+                  >
+                    <Button
+                      style={{
+                        width: "100%",
+                      }}
+                      color="orange"
+                      variant="solid"
+                    >
+                      <Users className="h-4 w-4" /> Customer
+                    </Button>
+                  </Link>
+                </Grid>
+                <Grid columns="2" className="gap-2">
                   <Link
                     href={`/company/templates/${template.id}/public`}
                     className="flex-1"
                   >
-                    <Button className="w-full">
-                      <ExternalLink className="h-4 w-4 mr-2" />
+                    <Button
+                      style={{
+                        width: "100%",
+                      }}
+                      variant="solid"
+                      color="green"
+                    >
+                      <ExternalLink className="h-4 w-4" />
                       Public
                     </Button>
                   </Link>
-                  <Button onClick={() => handleDelete(template.id)}>
-                    <Trash2 className="h-4 w-4" />
+                  <Button
+                    variant="solid"
+                    color="ruby"
+                    style={{
+                      width: "100%",
+                    }}
+                    onClick={() => handleDelete(template.id)}
+                  >
+                    <Trash2 className="h-4 w-4" /> Delete
                   </Button>
-                </CardFooter>
+                </Grid>
               </Card>
             ))}
           </div>

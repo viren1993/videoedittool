@@ -96,7 +96,6 @@ export default function BulkCustomerCreate() {
       setTimeout(() => {
         router.push("/company/customer");
       }, 800);
-      console.log("API Response:", response.data);
     } catch (error: any) {
       console.error(error);
       setErrorMsg(error.response?.data?.detail || error.message);

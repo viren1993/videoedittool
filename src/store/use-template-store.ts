@@ -8,6 +8,46 @@ import {
   type TemplatePayload,
 } from "@/utils/template-api";
 import type { TemplateType } from "@/features/templates/type";
+import { DATA_API } from "@/config/constants";
+
+/**
+ * Normalize media file URL from API response
+ * Converts relative paths like "./media/..." to full URLs
+ */
+function normalizeMediaFileUrl(fileUrl: string): string {
+  if (!fileUrl || typeof fileUrl !== "string") {
+    return fileUrl;
+  }
+
+  // If already a full URL, check for duplicate /media/./media/ pattern and fix it
+  if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+    return fileUrl.replace(/\/media\/\.\/media\//g, "/media/");
+  }
+
+  // Remove ./media/ prefix if it exists
+  let normalized = fileUrl.replace(/^\.\/media\//, "");
+  
+  // Remove /media/ prefix if it exists (for absolute paths)
+  normalized = normalized.replace(/^\/media\//, "");
+
+  // Construct full URL
+  if (!DATA_API) {
+    console.warn("DATA_API not configured, returning normalized path");
+    return normalized;
+  }
+
+  return `${DATA_API}/media/${normalized}`;
+}
+
+/**
+ * Normalize an array of media URLs
+ */
+function normalizeMediaUrls(urls: string[]): string[] {
+  if (!Array.isArray(urls)) {
+    return [];
+  }
+  return urls.map(normalizeMediaFileUrl);
+}
 
 /**
  * Replace blob URLs in template data with permanent URLs from base arrays
@@ -92,21 +132,12 @@ function replaceBlobUrlsWithPermanentUrls(
     if (isBlob) {
       const permanentUrl = blobToPermanentMap.get(src);
       if (permanentUrl) {
-        const oldSrc = trackItem.details.src;
-        trackItem.details.src = permanentUrl;
-        console.log(
-          `✅ Replaced ${trackItem.type} blob URL [${itemId}]:\n  From: ${oldSrc}\n  To: ${permanentUrl}`
-        );
-      } else {
-        console.warn(
-          `⚠️ No permanent URL mapping found for ${trackItem.type} blob [${itemId}]: ${src}`
-        );
+        // Normalize the permanent URL to ensure proper format
+        trackItem.details.src = normalizeMediaFileUrl(permanentUrl);
       }
     } else {
-      // Not a blob URL, keep as is
-      console.log(
-        `✓ Keeping permanent URL for ${trackItem.type} [${itemId}]: ${src}`
-      );
+      // Normalize non-blob URLs to fix any existing ./media/ issues
+      trackItem.details.src = normalizeMediaFileUrl(src);
     }
   }
 
@@ -160,16 +191,16 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
       // Transform API templates to TemplateType format (full API JSON format)
       const transformedTemplates: TemplateType[] = apiTemplates.map(
         (t: any) => {
-          // Get base URL arrays
-          const baseVideoUrls = Array.isArray(t.base_video_url)
-            ? t.base_video_url
-            : [];
-          const baseImageUrls = Array.isArray(t.base_image_url)
-            ? t.base_image_url
-            : [];
-          const baseAudioUrls = Array.isArray(t.base_audio_url)
-            ? t.base_audio_url
-            : [];
+          // Get base URL arrays and normalize them
+          const baseVideoUrls = normalizeMediaUrls(
+            Array.isArray(t.base_video_url) ? t.base_video_url : []
+          );
+          const baseImageUrls = normalizeMediaUrls(
+            Array.isArray(t.base_image_url) ? t.base_image_url : []
+          );
+          const baseAudioUrls = normalizeMediaUrls(
+            Array.isArray(t.base_audio_url) ? t.base_audio_url : []
+          );
 
           // Extract template_json
           let templateJson = t.template_json || {};
@@ -301,21 +332,28 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
 
       // Replace blob URLs with permanent URLs from base arrays
       // Handle both direct and nested response structures
-      const baseVideoUrls = Array.isArray(apiTemplate.base_video_url)
-        ? apiTemplate.base_video_url
-        : Array.isArray(apiTemplate.template?.base_video_url)
-        ? apiTemplate.template.base_video_url
-        : [];
-      const baseImageUrls = Array.isArray(apiTemplate.base_image_url)
-        ? apiTemplate.base_image_url
-        : Array.isArray(apiTemplate.template?.base_image_url)
-        ? apiTemplate.template.base_image_url
-        : [];
-      const baseAudioUrls = Array.isArray(apiTemplate.base_audio_url)
-        ? apiTemplate.base_audio_url
-        : Array.isArray(apiTemplate.template?.base_audio_url)
-        ? apiTemplate.template.base_audio_url
-        : [];
+      // Normalize URLs to remove ./media/ prefixes and construct full URLs
+      const baseVideoUrls = normalizeMediaUrls(
+        Array.isArray(apiTemplate.base_video_url)
+          ? apiTemplate.base_video_url
+          : Array.isArray(apiTemplate.template?.base_video_url)
+          ? apiTemplate.template.base_video_url
+          : []
+      );
+      const baseImageUrls = normalizeMediaUrls(
+        Array.isArray(apiTemplate.base_image_url)
+          ? apiTemplate.base_image_url
+          : Array.isArray(apiTemplate.template?.base_image_url)
+          ? apiTemplate.template.base_image_url
+          : []
+      );
+      const baseAudioUrls = normalizeMediaUrls(
+        Array.isArray(apiTemplate.base_audio_url)
+          ? apiTemplate.base_audio_url
+          : Array.isArray(apiTemplate.template?.base_audio_url)
+          ? apiTemplate.template.base_audio_url
+          : []
+      );
 
       console.log("📦 Base URLs from API:", {
         videos: baseVideoUrls.length,
@@ -421,16 +459,16 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
         result = await saveTemplateToAPI(payload, accessToken);
       }
 
-      // Get base URL arrays
-      const baseVideoUrls = Array.isArray(result.base_video_url)
-        ? result.base_video_url
-        : [];
-      const baseImageUrls = Array.isArray(result.base_image_url)
-        ? result.base_image_url
-        : [];
-      const baseAudioUrls = Array.isArray(result.base_audio_url)
-        ? result.base_audio_url
-        : [];
+      // Get base URL arrays and normalize them
+      const baseVideoUrls = normalizeMediaUrls(
+        Array.isArray(result.base_video_url) ? result.base_video_url : []
+      );
+      const baseImageUrls = normalizeMediaUrls(
+        Array.isArray(result.base_image_url) ? result.base_image_url : []
+      );
+      const baseAudioUrls = normalizeMediaUrls(
+        Array.isArray(result.base_audio_url) ? result.base_audio_url : []
+      );
 
       // Extract and replace blob URLs in template_json
       let templateJson = result.template_json || {};

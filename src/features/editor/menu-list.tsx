@@ -7,7 +7,7 @@ import {
   Drawer,
   DrawerContent,
   DrawerHeader,
-  DrawerTitle
+  DrawerTitle,
 } from "@/components/ui/drawer";
 import { MenuItem } from "./menu-item/menu-item";
 import { useIsLargeScreen } from "@/hooks/use-media-query";
@@ -18,62 +18,56 @@ const MENU_ITEMS = [
     id: "uploads",
     icon: Icons.upload,
     label: "Uploads",
-    ariaLabel: "Add and manage uploads"
+    ariaLabel: "Add and manage uploads",
   },
   {
     id: "texts",
     icon: Icons.type,
     label: "Texts",
-    ariaLabel: "Add and edit text elements"
+    ariaLabel: "Add and edit text elements",
   },
   {
     id: "videos",
     icon: Icons.video,
     label: "Videos",
-    ariaLabel: "Add and manage video content"
+    ariaLabel: "Add and manage video content",
   },
   {
     id: "captions",
     icon: Icons.captions,
     label: "Captions",
-    ariaLabel: "Add and edit captions"
+    ariaLabel: "Add and edit captions",
   },
   {
     id: "images",
     icon: Icons.image,
     label: "Images",
-    ariaLabel: "Add and manage images"
+    ariaLabel: "Add and manage images",
   },
   {
     id: "audios",
     icon: Icons.audio,
     label: "Audio",
-    ariaLabel: "Add and manage audio content"
+    ariaLabel: "Add and manage audio content",
   },
   {
     id: "transitions",
-    icon: Icons.transition, // Custom SVG for transitions
+    icon: Icons.transition,
     label: "Transitions",
-    ariaLabel: "Add transition effects"
+    ariaLabel: "Add transition effects",
   },
   {
     id: "ai-voice",
     icon: Icons.volume,
     label: "AI Voice",
-    ariaLabel: "Generate AI voice from text"
+    ariaLabel: "Generate AI voice from text",
   },
   {
     id: "customer-data",
     icon: Icons.customerData,
     label: "Customer",
-    ariaLabel: "Insert customer data fields"
+    ariaLabel: "Insert customer data fields",
   },
-  {
-    id: "categories",
-    icon: Icons.categories,
-    label: "Categories",
-    ariaLabel: "Browse template categories"
-  }
 ] as const;
 
 // Memoized menu button component for better performance
@@ -117,7 +111,7 @@ function MenuList() {
     activeMenuItem,
     showMenuItem,
     drawerOpen,
-    setDrawerOpen
+    setDrawerOpen,
   } = useLayoutStore();
 
   const isLargeScreen = useIsLargeScreen();
