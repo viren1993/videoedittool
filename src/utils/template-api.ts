@@ -358,6 +358,7 @@ export async function transformToTemplateFormat(
       trackItemIds: templateData.trackItemIds || [],
       transitionsMap: templateData.transitionsMap || {},
       transitionIds: templateData.transitionIds || [],
+      backgroundColor: templateData.backgroundColor || "#000000", // Save background color (default black)
     },
     options: {
       fps: templateData.fps || 30,

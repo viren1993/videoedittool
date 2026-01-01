@@ -24,9 +24,13 @@ interface CustomerFieldSettingsProps {
   trackItemId: string;
   type: "text" | "image" | "video" | "audio";
   metadata?: Partial<FieldMetadata>;
+  trackItem?: any;
 }
 
-const CUSTOMER_DATA_OPTIONS: Record<string, { value: string; label: string }[]> = {
+const CUSTOMER_DATA_OPTIONS: Record<
+  string,
+  { value: string; label: string }[]
+> = {
   text: [
     { value: "customer_company_name", label: "Customer Company Name" },
     { value: "full_name", label: "Full Name" },
@@ -63,25 +67,118 @@ const CUSTOMER_DATA_OPTIONS: Record<string, { value: string; label: string }[]> 
 function formatFieldLabel(path: string): string {
   return path
     .split(/[._]/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
-export function CustomerFieldSettings({ trackItemId, type, metadata }: CustomerFieldSettingsProps) {
+export function CustomerFieldSettings({
+  trackItemId,
+  type,
+  metadata,
+  trackItem,
+}: CustomerFieldSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isCustomerField, setIsCustomerField] = useState(metadata?.isCustomerField || false);
+  const [isCustomerField, setIsCustomerField] = useState(
+    metadata?.isCustomerField !== undefined ? metadata.isCustomerField : true
+  );
   const [fieldPath, setFieldPath] = useState(metadata?.fieldPath || "");
   const [fieldLabel, setFieldLabel] = useState(metadata?.fieldLabel || "");
-  const [isLocked, setIsLocked] = useState(metadata?.isLocked || false);
-  const [defaultValue, setDefaultValue] = useState(metadata?.defaultValue || "");
+  const [isLocked, setIsLocked] = useState(
+    metadata?.isLocked !== undefined ? metadata.isLocked : false
+  );
+  const [defaultValue, setDefaultValue] = useState(
+    metadata?.defaultValue || "custom data"
+  );
+
+  // Initialize default metadata when it's blank or missing required fields
+  // Helper function to convert `customer_company_name` → `Customer Company Name`
+  const formatFieldLabel = (path: string) => {
+    return path.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  // Helper function to detect {{customer_field}} format in text
+  const extractCustomerPath = (text?: string): string | null => {
+    if (!text) return null;
+    const match = text.match(/\{\{(.+?)\}\}/);
+    return match ? match[1] : null;
+  };
 
   useEffect(() => {
-    setIsCustomerField(metadata?.isCustomerField || false);
+    // Prevent re-initialization if metadata already has valid values
+    const alreadyInitialized =
+      metadata &&
+      metadata.fieldPath &&
+      metadata.fieldLabel &&
+      metadata.isCustomerField !== undefined;
+
+    if (alreadyInitialized) return;
+
+    let detectedPath = "";
+    let detectedLabel = "";
+    let defaultVal = "";
+
+    if (type === "text") {
+      const extractedPath = extractCustomerPath(trackItem?.details?.text);
+
+      if (extractedPath) {
+        // Dynamic Customer text detected
+        detectedPath = extractedPath;
+        detectedLabel = formatFieldLabel(extractedPath);
+        defaultVal = detectedLabel;
+      } else {
+        // Static text fallback
+        detectedPath = "custom_text";
+        detectedLabel = "Custom Text";
+        defaultVal = trackItem?.details?.text || "Custom Text";
+      }
+    } else if (type === "image") {
+      detectedPath = "background_image";
+      detectedLabel = "Background Image";
+      defaultVal = detectedLabel;
+    } else if (type === "video") {
+      detectedPath = "background_video";
+      detectedLabel = "Background Video";
+      defaultVal = detectedLabel;
+    } else if (type === "audio") {
+      detectedPath = "background_music";
+      detectedLabel = "Background Music";
+      defaultVal = detectedLabel;
+    }
+
+    const defaultMetadata = {
+      isCustomerField: true,
+      isLocked: false,
+      dataType: type,
+      fieldPath: detectedPath,
+      fieldLabel: detectedLabel,
+      defaultValue: defaultVal,
+    };
+
+    dispatch(EDIT_OBJECT, {
+      payload: {
+        [trackItemId]: {
+          metadata: defaultMetadata,
+        },
+      },
+    });
+  }, [trackItemId, type, metadata, trackItem]);
+
+  useEffect(() => {
+    setIsCustomerField(
+      metadata?.isCustomerField !== undefined ? metadata.isCustomerField : true
+    );
     setFieldPath(metadata?.fieldPath || "");
     setFieldLabel(metadata?.fieldLabel || "");
-    setIsLocked(metadata?.isLocked || false);
+    setIsLocked(metadata?.isLocked !== undefined ? metadata.isLocked : false);
     setDefaultValue(metadata?.defaultValue || "");
-  }, [trackItemId, metadata?.isCustomerField, metadata?.fieldPath, metadata?.fieldLabel, metadata?.isLocked, metadata?.defaultValue]);
+  }, [
+    trackItemId,
+    metadata?.isCustomerField,
+    metadata?.fieldPath,
+    metadata?.fieldLabel,
+    metadata?.isLocked,
+    metadata?.defaultValue,
+  ]);
 
   const updateMetadata = (updates: Partial<FieldMetadata>) => {
     const newMetadata: Partial<FieldMetadata> = {
@@ -112,7 +209,10 @@ export function CustomerFieldSettings({ trackItemId, type, metadata }: CustomerF
     if (checked) {
       setIsLocked(false);
     }
-    updateMetadata({ isCustomerField: checked, isLocked: checked ? false : isLocked });
+    updateMetadata({
+      isCustomerField: checked,
+      isLocked: checked ? false : isLocked,
+    });
   };
 
   const handleFieldPathChange = (value: string) => {
@@ -125,7 +225,8 @@ export function CustomerFieldSettings({ trackItemId, type, metadata }: CustomerF
   const handleLockedToggle = (checked: boolean) => {
     if (!isCustomerField) {
       setIsLocked(checked);
-      updateMetadata({ isLocked: checked });
+      // When locking, set isCustomerField to false and isLocked to true
+      updateMetadata({ isCustomerField: false, isLocked: checked });
     }
   };
 
@@ -148,13 +249,18 @@ export function CustomerFieldSettings({ trackItemId, type, metadata }: CustomerF
             Customer Field Settings
           </span>
           <ChevronDown
-            className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+            className={`h-4 w-4 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
           />
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-3 pt-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="isCustomerField" className="text-xs flex items-center gap-2">
+          <Label
+            htmlFor="isCustomerField"
+            className="text-xs flex items-center gap-2"
+          >
             <User className="h-3 w-3" />
             Customer Field
           </Label>

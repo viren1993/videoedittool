@@ -15,7 +15,7 @@ const Scene = forwardRef<
   }
 >(({ stateManager }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { size, trackItemIds } = useStore();
+  const { size, trackItemIds, background } = useStore();
   const { zoom, handlePinch, recalculateZoom } = useZoom(
     containerRef as React.RefObject<HTMLDivElement>,
     size
@@ -46,7 +46,7 @@ const Scene = forwardRef<
         style={{
           width: size.width,
           height: size.height,
-          background: "#000000",
+          background: background?.value || "#000000",
           transform: `scale(${zoom})`,
           position: "absolute",
         }}

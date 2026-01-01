@@ -5,7 +5,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { dispatch } from "@designcombo/events";
 import { ADD_TEXT, ADD_ITEMS } from "@designcombo/state";
 import { generateId } from "@designcombo/timeline";
-import { nanoid } from "nanoid";
 import {
   Image,
   Type,
@@ -15,21 +14,14 @@ import {
   MapPin,
   Mail,
   AlertCircle,
-  Lock,
-  LockOpen,
   type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   useCustomerDataStore,
   type CustomerData as CustomerDataType,
 } from "../store/use-customer-data-store";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { DEFAULT_FONT } from "../constants/font";
 
 interface CustomerField {
   key: string;
@@ -187,39 +179,47 @@ export const CustomerData = () => {
   const setCustomerData = useCustomerDataStore(
     (state) => state.setCustomerData
   );
-  const [lockedFields, setLockedFields] = useState<Record<string, boolean>>({});
 
   const customerFields = useMemo(
     () => generateCustomerFields(customerData),
     [customerData]
   );
 
-  const toggleLock = (fieldKey: string) => {
-    setLockedFields((prev) => ({
-      ...prev,
-      [fieldKey]: !prev[fieldKey],
-    }));
-  };
-
   const handleAddTextField = (field: CustomerField) => {
-    const isLocked = lockedFields[field.key] || false;
     dispatch(ADD_TEXT, {
       payload: {
-        id: nanoid(),
+        id: generateId(),
+        display: {
+          from: 0,
+          to: 5000,
+        },
         type: "text",
         name: field.label,
         details: {
           text: `{{${field.path}}}`,
-          fontSize: 16,
-          // fontFamily: "Inter",
-          // fontWeight: 400,
-          // color: "#ffffff",
+          fontSize: 40, // change default size as required
+          width: 600,
+          fontUrl: DEFAULT_FONT.url,
+          fontFamily: DEFAULT_FONT.postScriptName,
+          color: "#ffffff",
+          wordWrap: "break-word",
+          textAlign: "left",
+          borderWidth: 0,
+          borderColor: "#000000",
+          boxShadow: {
+            color: "#00000000",
+            x: 0,
+            y: 0,
+            blur: 0,
+          },
         },
         metadata: {
           isCustomerField: true,
           fieldPath: field.path,
           fieldLabel: field.label,
-          isLocked,
+          defaultValue: field.label,
+          isLocked: false,
+          dataType: "text",
         },
       },
       options: {},
@@ -228,8 +228,6 @@ export const CustomerData = () => {
 
   const handleAddImageField = (field: CustomerField) => {
     const id = generateId();
-    const isLocked = lockedFields[field.key] || false;
-    console.log("Adding image field:", field, "Locked:", isLocked);
     dispatch(ADD_ITEMS, {
       payload: {
         trackItems: [
@@ -248,7 +246,9 @@ export const CustomerData = () => {
               isCustomerField: true,
               fieldPath: field.path,
               fieldLabel: field.label,
-              isLocked,
+              defaultValue: field.label,
+              isLocked: false,
+              dataType: "image",
             },
           },
         ],
@@ -318,53 +318,18 @@ export const CustomerData = () => {
           <div className="flex flex-col gap-2 mb-4">
             {textFields.map((field) => {
               const IconComponent = field.icon;
-              const isLocked = lockedFields[field.key] || false;
               return (
-                <div key={field.key} className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1 justify-start gap-2 h-auto py-2"
-                    onClick={() => handleAddTextField(field)}
-                  >
-                    <IconComponent className="h-4 w-4 text-muted-foreground" />
-                    <div className="flex flex-col items-start flex-1">
-                      <span className="text-sm flex items-center gap-1">
-                        {field.label}
-                        {isLocked && (
-                          <Lock className="h-3 w-3 text-orange-500" />
-                        )}
-                      </span>
-                    </div>
-                  </Button>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={isLocked ? "secondary" : "ghost"}
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleLock(field.key);
-                          }}
-                        >
-                          {isLocked ? (
-                            <Lock className="h-4 w-4 text-orange-500" />
-                          ) : (
-                            <LockOpen className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          {isLocked
-                            ? "Unlock: Customer can edit"
-                            : "Lock: Customer cannot edit"}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
+                <Button
+                  key={field.key}
+                  variant="outline"
+                  className="flex-1 justify-start gap-2 h-auto py-2"
+                  onClick={() => handleAddTextField(field)}
+                >
+                  <IconComponent className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex flex-col items-start flex-1">
+                    <span className="text-sm">{field.label}</span>
+                  </div>
+                </Button>
               );
             })}
           </div>
@@ -374,57 +339,22 @@ export const CustomerData = () => {
           <div className="flex flex-col gap-2">
             {imageFields.map((field) => {
               const IconComponent = field.icon;
-              const isLocked = lockedFields[field.key] || false;
 
               return (
-                <div key={field.key} className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1 justify-start gap-2 h-auto py-2"
-                    onClick={() => handleAddImageField(field)}
-                  >
-                    <IconComponent className="h-4 w-4 text-muted-foreground" />
-                    <div className="flex flex-col items-start flex-1">
-                      <span className="text-sm flex items-center gap-1">
-                        {field.label}
-                        {isLocked && (
-                          <Lock className="h-3 w-3 text-orange-500" />
-                        )}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        Click to insert
-                      </span>
-                    </div>
-                  </Button>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={isLocked ? "secondary" : "ghost"}
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleLock(field.key);
-                          }}
-                        >
-                          {isLocked ? (
-                            <Lock className="h-4 w-4 text-orange-500" />
-                          ) : (
-                            <LockOpen className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          {isLocked
-                            ? "Unlock: Customer can edit"
-                            : "Lock: Customer cannot edit"}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
+                <Button
+                  key={field.key}
+                  variant="outline"
+                  className="flex-1 justify-start gap-2 h-auto py-2"
+                  onClick={() => handleAddImageField(field)}
+                >
+                  <IconComponent className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex flex-col items-start flex-1">
+                    <span className="text-sm">{field.label}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Click to insert
+                    </span>
+                  </div>
+                </Button>
               );
             })}
           </div>

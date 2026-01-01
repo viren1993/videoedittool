@@ -49,9 +49,9 @@ const ActiveMenuItem = () => {
     return <Uploads />;
   }
 
-  if (activeMenuItem === "ai-voice") {
-    return <AiVoice />;
-  }
+  // if (activeMenuItem === "ai-voice") {
+  //   return <AiVoice />;
+  // }
 
   if (activeMenuItem === "customer-data") {
     return <CustomerData />;

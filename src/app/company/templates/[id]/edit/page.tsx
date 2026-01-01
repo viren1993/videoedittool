@@ -7,250 +7,156 @@ import { useTemplateStore } from "@/store/use-template-store";
 import Editor from "@/features/editor/editor";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { generateId } from "@designcombo/timeline";
 
 export default function TemplateEditPage() {
   const params = useParams();
-  const router = useRouter();
   const { data: session, status } = useSession();
   const { fetchTemplate, currentTemplate, loading, error, setCurrentTemplate } =
     useTemplateStore();
 
-  const [isFetching, setIsFetching] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
+  const id = params?.id as string;
+  const accessToken = session?.user?.access_token;
+
+  // Load Template
   useEffect(() => {
-    if (status === "loading") {
-      return;
-    }
+    if (!id) return setLocalError("Template ID is missing");
+    if (!accessToken) return setLocalError("Access token missing");
 
-    if (status !== "authenticated") {
-      return;
-    }
-
-    const id = params.id as string;
-    const accessToken = session?.user?.access_token;
-
-    if (!accessToken) {
-      setLocalError("No access token available");
-      return;
-    }
-
-    if (!id) {
-      setLocalError("Template ID is missing");
-      router.push("/company/templates");
-      return;
-    }
-
-    // Check if we already have this template loaded
+    // Already loaded and valid
     if (currentTemplate?.id === id && currentTemplate?.template_json?.design) {
       return;
     }
 
-    let isMounted = true;
+    let active = true;
 
-    const loadTemplate = async () => {
-      try {
-        setIsFetching(true);
-        setLocalError(null);
+    const load = async () => {
+      const result = await fetchTemplate(id, accessToken);
 
-        // Fetch the template
-        const result = await fetchTemplate(id, accessToken);
-
-        if (!isMounted) {
-          return;
-        }
-
-        if (!result) {
-          setLocalError("Template not found");
-          setCurrentTemplate(null);
-          return;
-        } else {
-        }
-      } catch (err) {
-        if (isMounted) {
-          setLocalError(
-            err instanceof Error ? err.message : "Failed to load template"
-          );
-        }
-      } finally {
-        if (isMounted) {
-          setIsFetching(false);
-        }
+      if (!active) return;
+      if (!result) {
+        setLocalError("Template not found");
+        setCurrentTemplate(null);
       }
     };
 
-    loadTemplate();
-
+    load();
     return () => {
-      isMounted = false;
+      active = false;
     };
-  }, [
-    status,
-    params.id,
-    session?.user?.access_token,
-    fetchTemplate,
-    currentTemplate?.id, // Only depend on the ID
-  ]);
+  }, [id, accessToken, fetchTemplate]);
 
-  // Handle authentication states
+  // 🚫 Auth UI
   if (status === "loading") {
+    return <StatusScreen message="Authenticating..." />;
+  }
+
+  if (!session) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="text-muted-foreground">Authenticating...</p>
-        </div>
-      </div>
+      <RedirectScreen
+        message="Please sign in to edit templates"
+        buttonText="Sign In"
+        redirect="/signin"
+      />
     );
   }
 
-  if (status === "unauthenticated" || !session) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-muted-foreground">
-            Please sign in to edit templates
-          </p>
-          <Button onClick={() => router.push("/signin")}>Sign In</Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Check for errors
+  // 🚫 Error UI
   const displayError = error || localError;
   if (displayError) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-destructive">{displayError}</p>
-          <p className="text-sm text-muted-foreground">
-            Expected template ID: {params.id}
-          </p>
-          <Button
-            onClick={() => router.push("/company/templates")}
-            className="px-4 py-2"
-          >
-            Back to Templates
-          </Button>
-        </div>
-      </div>
+      <RedirectScreen
+        message={displayError}
+        subText={`Template ID: ${id}`}
+        redirect="/company/templates"
+      />
     );
   }
 
-  // Show loading state
-  const isLoading = loading || isFetching;
-  if (isLoading) {
+  // ⏳ Loading UI
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="text-muted-foreground">Loading template...</p>
-          <p className="text-sm text-muted-foreground">
-            Loading template ID: {params.id}
-          </p>
-        </div>
-      </div>
+      <StatusScreen
+        message="Loading template..."
+        subText={`Template ID: ${id}`}
+      />
     );
   }
 
-  // Check if template data is available
+  // 🚫 Missing Template
   if (!currentTemplate) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-muted-foreground">Template not found</p>
-          <p className="text-sm text-muted-foreground">
-            Expected ID: {params.id}
-          </p>
-          <Button
-            onClick={() => router.push("/company/templates")}
-            className="px-4 py-2"
-          >
-            Back to Templates
-          </Button>
-        </div>
-      </div>
+      <RedirectScreen
+        message="Template not found"
+        subText={`Expected ID: ${id}`}
+        redirect="/company/templates"
+      />
     );
   }
 
-  // Check if current template matches the ID we want
-  if (currentTemplate.id !== params.id) {
+  const templateData = currentTemplate.template_json?.design;
+  if (!templateData || typeof templateData !== "object") {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-muted-foreground">Template ID mismatch</p>
-          <p className="text-sm text-muted-foreground">
-            Loaded: {currentTemplate.id}, Expected: {params.id}
-          </p>
-          <Button
-            onClick={() => router.push("/company/templates")}
-            className="px-4 py-2"
-          >
-            Back to Templates
-          </Button>
-        </div>
-      </div>
+      <RedirectScreen
+        message="Invalid template data"
+        redirect="/company/templates"
+      />
     );
   }
 
-  if (!currentTemplate.template_json?.design) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-destructive">Template data is missing</p>
-          <p className="text-sm text-muted-foreground">
-            Template ID: {currentTemplate.id}
-          </p>
-          <Button
-            onClick={() => router.push("/company/templates")}
-            className="px-4 py-2"
-          >
-            Back to Templates
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const templateData = currentTemplate.template_json.design;
-
-  if (typeof templateData !== "object" || templateData === null) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-destructive">Invalid template data structure</p>
-          <Button
-            onClick={() => router.push("/company/templates")}
-            className="px-4 py-2"
-          >
-            Back to Templates
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Prepare editor design
+  // 🧠 Build final editor design object
   const editorDesign = {
-    id: currentTemplate.id,
+    id:
+      currentTemplate.template_json?.design?.id ||
+      currentTemplate.template_json?.id ||
+      generateId(),
     fps: templateData.fps || 30,
     size: templateData.size || { width: 1080, height: 1920 },
-    tracks: Array.isArray(templateData.tracks) ? templateData.tracks : [],
+    tracks: templateData.tracks || [],
     trackItemsMap: templateData.trackItemsMap || {},
-    trackItemIds: Array.isArray(templateData.trackItemIds)
-      ? templateData.trackItemIds
-      : [],
+    trackItemIds: templateData.trackItemIds || [],
     transitionsMap: templateData.transitionsMap || {},
-    transitionIds: Array.isArray(templateData.transitionIds)
-      ? templateData.transitionIds
-      : [],
-    ...templateData,
+    transitionIds: templateData.transitionIds || [],
+    backgroundColor: templateData.backgroundColor || "#000000",
   };
 
   return (
-    <>
-      <Editor tempId={currentTemplate.id} initialDesign={editorDesign} />
-    </>
+    <Editor
+      id={editorDesign.id}
+      tempId={currentTemplate.id}
+      initialDesign={editorDesign}
+    />
+  );
+}
+
+/* ------------------ UI Helper Components ------------------ */
+
+function StatusScreen({ message, subText }: any) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-2">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <p className="text-muted-foreground">{message}</p>
+      {subText && <p className="text-sm text-muted-foreground">{subText}</p>}
+    </div>
+  );
+}
+
+function RedirectScreen({
+  message,
+  subText,
+  buttonText = "Back",
+  redirect,
+}: any) {
+  const router = useRouter();
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-center">
+      <p className="text-destructive">{message}</p>
+      {subText && <p className="text-sm text-muted-foreground">{subText}</p>}
+      <Button className="px-4" onClick={() => router.push(redirect)}>
+        {buttonText}
+      </Button>
+    </div>
   );
 }

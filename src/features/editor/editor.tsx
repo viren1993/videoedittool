@@ -1,6 +1,5 @@
 "use client";
 import Timeline from "./timeline";
-import useStore from "./store/use-store";
 import Navbar from "./navbar";
 import useTimelineEvents from "./hooks/use-timeline-events";
 import Scene from "./scene";
@@ -30,6 +29,7 @@ import { useIsLargeScreen } from "@/hooks/use-media-query";
 import { ITrackItem } from "@designcombo/types";
 import useLayoutStore from "./store/use-layout-store";
 import ControlItemHorizontal from "./control-item-horizontal";
+import useStore from "./store/use-store";
 
 const stateManager = new StateManager({
   size: {
@@ -61,6 +61,7 @@ const Editor = ({
     setTypeControlItem,
   } = useLayoutStore();
   const isLargeScreen = useIsLargeScreen();
+  const { setState } = useStore();
 
   useTimelineEvents();
 
@@ -146,13 +147,43 @@ const Editor = ({
         trackItemIds: initialDesign.trackItemIds || [],
         transitionsMap: initialDesign.transitionsMap || {},
         transitionIds: initialDesign.transitionIds || [],
+        backgroundColor: initialDesign.backgroundColor || "#000000",
       };
       dispatch(DESIGN_LOAD, { payload: designToLoad });
+      // Update background color in store
+      if (designToLoad.backgroundColor) {
+        setState({
+          background: {
+            type: "color",
+            value: designToLoad.backgroundColor,
+          },
+        });
+      }
       setLoaded(true);
     } else {
+      // Clear previous data and load fresh empty design for new template
+      const emptyDesign = {
+        id: generateId(),
+        fps: 30,
+        size: { width: 1080, height: 1920 },
+        tracks: [],
+        trackItemsMap: {},
+        trackItemIds: [],
+        transitionsMap: {},
+        transitionIds: [],
+        backgroundColor: "#000000", // Default black background
+      };
+      dispatch(DESIGN_LOAD, { payload: emptyDesign });
+      // Set default background color in store
+      setState({
+        background: {
+          type: "color",
+          value: "#000000",
+        },
+      });
       setLoaded(true);
     }
-  }, [initialDesign]);
+  }, [initialDesign, tempId, setState]);
 
   return (
     <div className="flex h-screen w-screen flex-col">

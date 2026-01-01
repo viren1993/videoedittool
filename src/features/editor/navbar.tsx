@@ -38,6 +38,10 @@ import { transformToTemplateFormat } from "@/utils/template-api";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTemplateStore } from "@/store/use-template-store";
+import ColorPicker from "@/components/color-picker";
+import { Palette } from "lucide-react";
+import useStore from "@/features/editor/store/use-store";
+import { DESIGN_LOAD } from "@designcombo/state";
 
 export default function Navbar({
   user,
@@ -85,6 +89,9 @@ export default function Navbar({
 
   const [category, setCategory] = useState("");
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [backgroundColor, setBackgroundColor] = useState("#000000");
+  const [isBgColorOpen, setIsBgColorOpen] = useState(false);
+  const { background } = useStore();
   const getAspectRatioLabel = (width: number, height: number): string => {
     const ratio = width / height;
     if (Math.abs(ratio - 16 / 9) < 0.1) return "16:9";
@@ -93,6 +100,33 @@ export default function Navbar({
     if (Math.abs(ratio - 4 / 5) < 0.1) return "4:5";
     return `${width}x${height}`;
   };
+
+  // Load background color from state
+  useEffect(() => {
+    if (background?.value) {
+      setBackgroundColor(background.value);
+    }
+  }, [background]);
+
+  const handleBackgroundColorChange = (color: string) => {
+    setBackgroundColor(color);
+    // Update background color in store
+    useStore.setState({
+      background: {
+        type: "color",
+        value: color,
+      },
+    });
+    // Also update in stateManager for saving
+    const data = stateManager.toJSON();
+    dispatch(DESIGN_LOAD, {
+      payload: {
+        ...data,
+        backgroundColor: color,
+      },
+    });
+  };
+
   const handleSave = async () => {
     if (isSaving) return;
 
@@ -109,6 +143,7 @@ export default function Navbar({
       const data = {
         id: generateId(),
         ...stateManager.toJSON(),
+        backgroundColor: backgroundColor, // Include background color in saved data
       };
 
       const fields = extractFieldsFromMetadata(data);
@@ -123,11 +158,6 @@ export default function Navbar({
         accessToken,
         category || undefined
       );
-
-      // Clear current template when creating new (not updating)
-      if (!tempId) {
-        setCurrentTemplate(null);
-      }
 
       // Save to API using Zustand store - use PUT for updates, POST for new
       const savedTemplate = await saveTemplate(
@@ -146,7 +176,8 @@ export default function Navbar({
             description: `${savedTemplate.template_name} with ${customerFields.length} customer fields`,
           }
         );
-        setCurrentTemplate(null);
+        // Only clear currentTemplate after successful save and navigation
+        // Don't clear on create to preserve data
         router.push("/company/templates");
       } else {
         toast.error("Failed to save template");
@@ -238,6 +269,32 @@ export default function Navbar({
                   {cat.label}
                 </div>
               ))}
+            </PopoverContent>
+          </Popover>
+          <Popover open={isBgColorOpen} onOpenChange={setIsBgColorOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                className="flex h-7 gap-1 border border-border"
+                variant="outline"
+                size="sm"
+              >
+                <Palette className="h-4 w-4" />
+                <span className="hidden md:block">BG Color</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="bg-background z-[251] w-80 p-4">
+              <div className="space-y-3">
+                <Label className="text-xs font-semibold">
+                  Background Color
+                </Label>
+                <ColorPicker
+                  value={backgroundColor}
+                  onChange={handleBackgroundColorChange}
+                  format="hex"
+                  solid={true}
+                  gradient={false}
+                />
+              </div>
             </PopoverContent>
           </Popover>
           <ResizeVideo />
