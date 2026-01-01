@@ -1,0 +1,46 @@
+{
+  "name": "@designcombo/animations",
+  "version": "5.5.8",
+  "private": false,
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.umd.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.es.js",
+      "require": "./dist/index.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "devDependencies": {
+    "@designcombo/events": "^1.0.2",
+    "@types/node": "^20.11.24",
+    "@types/react": "^18.2.0",
+    "rollup-plugin-peer-deps-external": "^2.2.4",
+    "typescript": "^5.3.3",
+    "vite": "^5.2.0",
+    "vite-plugin-dts": "^3.9.1",
+    "@designcombo/types": "5.5.8",
+    "@designcombo/typescript-config": "0.0.0"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "remotion": "^4.0.0",
+    "rxjs": "^7.8.1",
+    "nanoid": "^5.0.7"
+  },
+  "peerDependencies": {
+    "@designcombo/events": "^1.0.2",
+    "react": "^18.2.0",
+    "remotion": "^4.0.0",
+    "@designcombo/types": "5.5.8"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "format": "prettier --write ."
+  }
+}

@@ -1,0 +1,10 @@
+export { drawVerticalLine } from './controls/draw';
+export * from './objects';
+export { default } from './timeline';
+export * from './utils';
+export * from './constants';
+export * from './resize';
+export * from './global';
+export * from './timeline';
+export { FabricObject, Control, classRegistry, Rect, util, controlsUtils, Pattern } from 'fabric';
+export type { TransformActionHandler } from 'fabric';

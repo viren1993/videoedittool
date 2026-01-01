@@ -13,12 +13,12 @@
     "format": "biome format . --write"
   },
   "dependencies": {
-    "@designcombo/animations": "^5.4.2",
-    "@designcombo/events": "^1.0.2",
-    "@designcombo/frames": "^0.0.3",
-    "@designcombo/state": "^5.4.2",
-    "@designcombo/timeline": "^5.4.2",
-    "@designcombo/transitions": "^5.4.2",
+    "@designcombo/animations": "file:packages/@designcombo/animations",
+    "@designcombo/events": "file:packages/@designcombo/events",
+    "@designcombo/frames": "file:packages/@designcombo/frames",
+    "@designcombo/state": "file:packages/@designcombo/state",
+    "@designcombo/timeline": "file:packages/@designcombo/timeline",
+    "@designcombo/transitions": "file:packages/@designcombo/transitions",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@google/genai": "^1.6.0",
@@ -106,7 +106,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@designcombo/types": "^5.4.2",
+    "@designcombo/types": "file:packages/@designcombo/types",
     "@tailwindcss/postcss": "^4",
     "@types/lodash": "^4.17.17",
     "@types/papaparse": "^5.5.2",

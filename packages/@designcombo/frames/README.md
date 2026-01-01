@@ -1,0 +1,1 @@
+# @designcombopro/thumbnails
